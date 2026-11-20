@@ -16,3 +16,10 @@ document.documentElement.dataset.theme = storedTheme === "light" || storedTheme 
   : window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark";
 
 mount(App, { target: document.getElementById("app")! });
+
+const env = (import.meta as ImportMeta & { env?: Record<string, boolean> }).env;
+if (env?.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    void navigator.serviceWorker.register("/sw.js").catch(() => {});
+  });
+}

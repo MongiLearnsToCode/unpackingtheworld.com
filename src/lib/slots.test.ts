@@ -37,6 +37,17 @@ const components: [string, string, Record<string, unknown>][] = [
     onManual: () => {},
   }],
   ["ResizableSplit", "/src/lib/components/ResizableSplit.svelte", { narrow: false, inputPane: emptySnippet, resultsPane: emptySnippet }],
+  ["ArchiveTree", "/src/lib/components/ArchiveTree.svelte", {
+    entries: [{
+      path: "folder/file.txt",
+      size: 3,
+      compressedSize: 3,
+      directory: false,
+      read: async () => new Uint8Array([97, 98, 99]),
+    }],
+    onSelect: () => {},
+  }],
+  ["DropZone", "/src/lib/components/DropZone.svelte", { onFile: () => {} }],
 ];
 
 test("app.css declares at least one data-slot", () => {

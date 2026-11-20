@@ -8,7 +8,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.worker.json --noEmit",
-    "test": "node --experimental-strip-types --test src/lib/unpackers/*.test.ts src/lib/*.test.ts worker/*.test.ts",
+    "test": "node --experimental-strip-types --test src/lib/unpackers/*.test.ts src/lib/archive/*.test.ts src/lib/*.test.ts worker/*.test.ts",
     "dev:worker": "wrangler dev",
     "deploy": "npm run build && wrangler deploy",
     "support:lookup": "node scripts/support-lookup.mjs"
@@ -20,6 +20,7 @@
     "@ui-sdk/svelte": "0.1.0-beta.13",
     "cron-parser": "5.10.6",
     "cronstrue": "3.43.0",
+    "fflate": "0.8.3",
     "svelte": "5.58.0",
     "ua-parser-js": "2.0.10"
   },

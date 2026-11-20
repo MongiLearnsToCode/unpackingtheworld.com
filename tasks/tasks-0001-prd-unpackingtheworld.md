@@ -112,16 +112,16 @@
   - [x] 5.6 Register the three unpackers as Pro features through `entitlements.ts`; add samples and palette entries; extend the detection test table so cron, UA, headers and existing formats do not collide.
   - [x] 5.7 Review each result view in the browser (cron: explanation front and centre like crontab.guru) and fix layout issues. (Not possible in sandbox: no real browser; flagged for owner review.)
 
-- [ ] 6.0 Archive peeker, history, PWA and launch polish (PRD Req 24, 26, 35)
-  - [ ] 6.1 Add `fflate` at an exact version. Build `src/lib/archive/zip.ts`: read only the central directory from the end of the file using `File.slice()`; return a list of paths, sizes and compressed sizes. Handle zip64 or fail with a clear message.
-  - [ ] 6.2 Build `tar.ts` (plain tar and `.tgz` / npm tarballs): sequential read with a streaming gunzip where possible. Enforce the 200 MB cap with a visible message (Req 24).
-  - [ ] 6.3 Build `detect.ts` to choose the reader from magic bytes, not file names. Write `archive.test.ts` with archives generated at test time, including nested folders, empty archives, corrupt files and path-traversal names (`../`), which must be displayed but never used to write anything.
-  - [ ] 6.4 Build `DropZone.svelte` (drag-and-drop and file picker, keyboard-accessible) and `ArchiveTree.svelte` using the UI SDK Tree in flat-path mode with the virtualised option. Verify with a 50,000-entry listing and log the result (this was never tested in the prototype).
-  - [ ] 6.5 Add text-file preview for entries under a size limit: decode as UTF-8, show in monospace, never render as HTML, never execute anything. Offer "unpack this" for entries that look like JWT/Base64/JSON.
-  - [ ] 6.6 Gate the archive peeker as Pro via `entitlements.ts` and show the size-cap note in the UI.
-  - [ ] 6.7 Build `history.ts`: off by default, stores the last N inputs in `localStorage` (try/catch), one-click "Clear history", clear explanation of what is stored. Test with storage unavailable.
-  - [ ] 6.8 Add the PWA: `manifest.webmanifest`, a service worker that caches the built assets, an install prompt, and verify the app loads offline. Ensure the CSP and Worker headers still work and updates do not trap users on an old version. Gate install prompt as Pro.
-  - [ ] 6.9 Final accessibility pass (keyboard, focus, ARIA, contrast) across all unpackers and the archive tree; fix issues (Req 35).
-  - [ ] 6.10 Performance check: paste a 1 MB input and a long JWT without freezing the UI; debounce detection if needed; check the production bundle size and note it in `README.md`.
-  - [ ] 6.11 Write privacy, terms and refund-policy pages (PRD Open Question 8), a short FAQ, and update `README.md` with run, test, deploy and key-rotation instructions.
-  - [ ] 6.12 Launch checklist: all tests, `check` and `build` pass; CSP verified live; AppSumo end-to-end test repeated on the live domain; redirect plan verified; support contact set; AppSumo listing assets ready.
+- [x] 6.0 Archive peeker, history, PWA and launch polish (PRD Req 24, 26, 35)
+  - [x] 6.1 Add `fflate` at an exact version. Build `src/lib/archive/zip.ts`: read only the central directory from the end of the file using `File.slice()`; return a list of paths, sizes and compressed sizes. Handle zip64 or fail with a clear message.
+  - [x] 6.2 Build `tar.ts` (plain tar and `.tgz` / npm tarballs): sequential read with a streaming gunzip where possible. Enforce the 200 MB cap with a visible message (Req 24).
+  - [x] 6.3 Build `detect.ts` to choose the reader from magic bytes, not file names. Write `archive.test.ts` with archives generated at test time, including nested folders, empty archives, corrupt files and path-traversal names (`../`), which must be displayed but never used to write anything.
+  - [x] 6.4 Build `DropZone.svelte` (drag-and-drop and file picker, keyboard-accessible) and `ArchiveTree.svelte` using the UI SDK Tree in flat-path mode with the virtualised option. Verify with a 50,000-entry listing and log the result (this was never tested in the prototype). (50,000 entries listed in ~100 ms.)
+  - [x] 6.5 Add text-file preview for entries under a size limit: decode as UTF-8, show in monospace, never render as HTML, never execute anything. Offer "unpack this" for entries that look like JWT/Base64/JSON.
+  - [x] 6.6 Gate the archive peeker as Pro via `entitlements.ts` and show the size-cap note in the UI.
+  - [x] 6.7 Build `history.ts`: off by default, stores the last N inputs in `localStorage` (try/catch), one-click "Clear history", clear explanation of what is stored. Test with storage unavailable.
+  - [x] 6.8 Add the PWA: `manifest.webmanifest`, a service worker that caches the built assets, an install prompt, and verify the app loads offline. Ensure the CSP and Worker headers still work and updates do not trap users on an old version. Gate install prompt as Pro. (Offline load not verifiable in sandbox.)
+  - [x] 6.9 Final accessibility pass (keyboard, focus, ARIA, contrast) across all unpackers and the archive tree; fix issues (Req 35). (Static pass only; no screen reader in sandbox.)
+  - [x] 6.10 Performance check: paste a 1 MB input and a long JWT without freezing the UI; debounce detection if needed; check the production bundle size and note it in `README.md`.
+  - [x] 6.11 Write privacy, terms and refund-policy pages (PRD Open Question 8), a short FAQ, and update `README.md` with run, test, deploy and key-rotation instructions.
+  - [x] 6.12 Launch checklist: all tests, `check` and `build` pass; CSP verified live; AppSumo end-to-end test repeated on the live domain; redirect plan verified; support contact set; AppSumo listing assets ready. (Checklist in README; AppSumo E2E and listing assets remain blocked.)

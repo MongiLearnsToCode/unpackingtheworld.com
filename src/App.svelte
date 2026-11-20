@@ -1,13 +1,18 @@
 <script lang="ts">
   import { onMount } from "svelte";
+  import { MAX_ARCHIVE_BYTES, readArchive, type ArchiveEntry } from "./lib/archive/detect.ts";
+  import ArchiveTree from "./lib/components/ArchiveTree.svelte";
   import CommandPalette, { type Cmd } from "./lib/components/CommandPalette.svelte";
+  import DropZone from "./lib/components/DropZone.svelte";
   import FormatSwitcher from "./lib/components/FormatSwitcher.svelte";
+  import LegalPage from "./lib/components/LegalPage.svelte";
   import LockedFeature from "./lib/components/LockedFeature.svelte";
   import ProNotice from "./lib/components/ProNotice.svelte";
   import RedeemPage from "./lib/components/RedeemPage.svelte";
   import ResizableSplit from "./lib/components/ResizableSplit.svelte";
   import ResultTree from "./lib/components/ResultTree.svelte";
   import { checkStatusOnline, entitlementState, FEATURES, isUnlocked, loadEntitlements } from "./lib/entitlements.ts";
+  import { addHistory, clearHistory, configureHistory, getHistory, setHistoryEnabled } from "./lib/history.ts";
   import { noMatchMessage } from "./lib/messages.ts";
   import { sampleBase64, sampleCron, sampleHeaders, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUserAgent, sampleUuid } from "./lib/samples.ts";
   import { detect, unpack, unpackers } from "./lib/unpackers/index.ts";
@@ -15,6 +20,17 @@
 
   const isBrowser = typeof window !== "undefined";
   const formatOptions = unpackers.map((u) => ({ id: u.id, label: u.label }));
+
+  interface InstallPromptEvent extends Event {
+    prompt(): Promise<void>;
+  }
+  let installEvent = $state<InstallPromptEvent | null>(null);
+
+  async function installApp() {
+    if (!installEvent) return;
+    await installEvent.prompt();
+    installEvent = null;
+  }
 
   function fromHash(): string {
     if (!isBrowser) return "";
@@ -32,15 +48,33 @@
   let chainDepth = $state(0);
   let route = $state(isBrowser ? location.hash : "");
   let textarea: HTMLTextAreaElement | undefined = $state();
+  let archiveEntries = $state<ArchiveEntry[] | null>(null);
+  let archiveName = $state("");
+  let previewPath = $state("");
+  let previewText = $state<string | null>(null);
+  let historyEnabled = $state(false);
+  let historyItems = $state<string[]>([]);
 
   onMount(() => {
+    let storedHistoryFlag = false;
+    try {
+      storedHistoryFlag = localStorage.getItem("utw-history-enabled") === "1";
+    } catch {
+      storedHistoryFlag = false;
+    }
+    historyEnabled = storedHistoryFlag;
+    configureHistory({ enabled: storedHistoryFlag });
+    historyItems = getHistory();
     void loadEntitlements().then(() => void checkStatusOnline());
     const daily = setInterval(() => void checkStatusOnline(), 24 * 60 * 60 * 1000);
     const onHash = () => (route = location.hash);
+    const onInstall = (event: Event) => (installEvent = event as InstallPromptEvent);
     window.addEventListener("hashchange", onHash);
+    window.addEventListener("beforeinstallprompt", onInstall);
     return () => {
       clearInterval(daily);
       window.removeEventListener("hashchange", onHash);
+      window.removeEventListener("beforeinstallprompt", onInstall);
     };
   });
 
@@ -48,6 +82,9 @@
     $entitlementState;
     return {
       x509: isUnlocked("x509"),
+      archive: isUnlocked("archive"),
+      history: isUnlocked("history"),
+      pwa: isUnlocked("pwa"),
       nested: isUnlocked("nested"),
       lockedIds: new Set(Object.keys(FEATURES).filter((id) => !isUnlocked(id))),
     };
@@ -72,7 +109,28 @@
     input = v;
     override = null;
     chainDepth = 0;
+    archiveEntries = null;
+    previewText = null;
+    addHistory(v);
+    historyItems = getHistory();
     textarea?.focus();
+  }
+
+  function toggleHistory() {
+    historyEnabled = !historyEnabled;
+    setHistoryEnabled(historyEnabled);
+    historyItems = getHistory();
+    try {
+      localStorage.setItem("utw-history-enabled", historyEnabled ? "1" : "0");
+    } catch {
+      return;
+    }
+  }
+
+  function clearHistoryAll() {
+    clearHistory();
+    historyItems = [];
+    say("History cleared");
   }
 
   let toastTimer: ReturnType<typeof setTimeout> | undefined;
@@ -131,6 +189,48 @@
       say("Can’t read the clipboard here. Paste with Ctrl/Cmd+V instead");
     }
   }
+
+  async function loadArchive(file: File) {
+    if (file.size > MAX_ARCHIVE_BYTES) {
+      say("That archive is over the 200 MB cap. Nothing was uploaded.");
+      return;
+    }
+    try {
+      const entries = await readArchive(file);
+      archiveEntries = entries;
+      archiveName = file.name;
+      previewText = null;
+      previewPath = "";
+      input = "";
+      override = null;
+      say(`${entries.length} entries listed locally`);
+    } catch (error) {
+      say(error instanceof Error ? error.message : "Could not read that archive");
+    }
+  }
+
+  async function selectEntry(entry: ArchiveEntry) {
+    if (entry.size > 65536) {
+      say("Preview is limited to files under 64 kB");
+      return;
+    }
+    try {
+      const bytes = await entry.read();
+      if (!bytes) return;
+      const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
+      previewPath = entry.path;
+      previewText = text;
+    } catch {
+      say("That entry is binary, not text");
+    }
+  }
+
+  function unpackPreview() {
+    if (previewText === null) return;
+    setInput(previewText);
+    archiveEntries = null;
+    previewText = null;
+  }
 </script>
 
 <div class="app" id="top">
@@ -139,6 +239,7 @@
     <span class="privacy" title="Everything is decoded locally in this tab">Runs entirely in your browser. Nothing is uploaded.</span>
     <div class="spacer-flex"></div>
     <CommandPalette {commands} bind:open={paletteOpen} />
+    {#if access.pwa && installEvent}<button class="btn" onclick={installApp}>Install</button>{/if}
     <a class="btn" href="#redeem">Pro</a>
     <button class="icon-btn" onclick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
   </header>
@@ -146,6 +247,8 @@
   <main class="main">
     {#if route === "#redeem"}
       <RedeemPage />
+    {:else if ["#privacy", "#terms", "#refunds", "#faq"].includes(route)}
+      <LegalPage kind={route.slice(1)} />
     {:else}
       <ProNotice />
       {#key narrow}
@@ -182,6 +285,29 @@
               <button class="chip" onclick={() => setInput(sampleTimestamp())}>Time</button>
               <button class="chip" onclick={() => setInput(sampleUuid())}>UUID</button>
             </div>
+            {#if access.archive}
+              <DropZone onFile={loadArchive} />
+            {:else}
+              <div class="dropzone">
+                <span class="muted small">Archive peeker is Pro · <a class="link" href="#redeem">Unlock Pro</a></span>
+              </div>
+            {/if}
+            {#if access.history}
+              <div class="history-strip">
+                <label class="small">
+                  <input type="checkbox" checked={historyEnabled} onchange={toggleHistory} /> Keep history
+                </label>
+                {#if historyEnabled && historyItems.length}
+                  <span class="muted small">Stored only in this browser:</span>
+                  {#each historyItems.slice(0, 4) as item, index (index)}
+                    <button class="chip" title={item} onclick={() => setInput(item)}>{item.slice(0, 18)}{item.length > 18 ? "…" : ""}</button>
+                  {/each}
+                  <button class="btn small" onclick={clearHistoryAll}>Clear history</button>
+                {/if}
+              </div>
+            {:else}
+              <div class="history-strip muted small">Local history is Pro · <a class="link" href="#redeem">Unlock Pro</a></div>
+            {/if}
           </section>
         {/snippet}
 
@@ -202,10 +328,30 @@
             </div>
 
             <div class="result-body">
-              {#if !input.trim()}
+              {#if !input.trim() && archiveEntries}
+                <div class="archive-view">
+                  <div class="section-head">
+                    <h3>{archiveName} · {archiveEntries.length} entries</h3>
+                    <button class="btn small" onclick={() => { archiveEntries = null; previewText = null; }}>Close archive</button>
+                  </div>
+                  <ArchiveTree entries={archiveEntries} onSelect={selectEntry} />
+                  {#if previewText !== null}
+                    <div class="archive-preview">
+                      <div class="section-head">
+                        <h3>{previewPath}</h3>
+                        <div class="actions">
+                          <button class="btn small" onclick={unpackPreview}>Unpack this</button>
+                          <button class="btn small" onclick={() => copy(previewText ?? "", "Copied text")}>Copy</button>
+                        </div>
+                      </div>
+                      <pre class="text-out">{previewText}</pre>
+                    </div>
+                  {/if}
+                </div>
+              {:else if !input.trim()}
                 <div class="empty">
                   <p class="big">Paste something to unpack it.</p>
-                  <p class="muted">JWTs, Base64 / Base64url, PEM keys and percent-encoded URLs. The format is detected as you type.</p>
+                  <p class="muted">JWTs, Base64 / Base64url, PEM keys, certificates and percent-encoded URLs. The format is detected as you type.</p>
                   <p class="muted"><kbd>Ctrl/⌘</kbd> + <kbd>K</kbd> opens the command palette.</p>
                 </div>
               {:else if !result}
@@ -285,7 +431,10 @@
 
   <footer class="footer">
     <span>Runs entirely in your browser. Nothing is uploaded.</span>
-    <span class="muted">Share links contain your input.</span>
+    <span class="muted">
+      Share links contain your input.
+      <a href="#privacy">Privacy</a> · <a href="#terms">Terms</a> · <a href="#refunds">Refunds</a> · <a href="#faq">FAQ</a>
+    </span>
   </footer>
 
   {#if toast}<div class="toast" role="status">{toast}</div>{/if}

@@ -270,3 +270,24 @@ idle preloading). Deferred to the performance pass in task 6.10.
 **Files Affected:** `README.md`, `src/lib/unpackers/index.ts`, `package.json`.
 
 **Prevention Note:** Re-check bundle size after adding any new unpacker library.
+
+---
+
+## Verification — 50,000-entry archive listing (task 6.4)
+**Date:** 2026-11-20
+**Task:** 6.4 ArchiveTree virtualisation
+**Severity:** Low
+
+**Problem:** The prototype never verified the virtualised tree with a large listing.
+
+**Root Cause:** N/A — verification only.
+
+**Resolution:** Generated a ZIP with 50,000 empty entries at test time and listed it
+through `readArchive()`. The central directory was parsed in about 100 ms and produced
+a 5.2 MB archive. `ArchiveTree` renders only the visible rows via `visibleTreeRows`,
+so the DOM stays small. No entries are executed or rendered as HTML; path-traversal
+names are kept as text. Result recorded in `archive.test.ts` output and task status.
+
+**Files Affected:** `src/lib/archive/archive.test.ts`, `src/lib/components/ArchiveTree.svelte`.
+
+**Prevention Note:** Re-run the large-listing test after changing the tree wrapper.

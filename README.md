@@ -82,10 +82,22 @@ There is no manual activate, upgrade or refund path.
 
 ## Bundle size
 
-Production build (after 5.0): main JS **447.6 kB / 154.6 kB gzip**, CSS **97.4 kB /
-14.0 kB gzip** (mostly self-hosted Geist fonts). The Pro-only cron, User-Agent and
-header parsers account for most of the growth. If first paint ever feels slow, the next
-step is to lazy-load those three unpackers behind a dynamic import.
+Production build (after 6.0): main JS **467.3 kB / 162.6 kB gzip**, CSS **98.5 kB /
+14.2 kB gzip** (mostly self-hosted Geist fonts). The Pro-only cron, User-Agent, header
+and archive parsers account for most of the growth. If first paint ever feels slow, the
+next step is to lazy-load those unpackers behind a dynamic import.
+
+## Launch checklist
+
+- [x] `npm test` (120 tests), `npm run check`, `npm run build` pass.
+- [x] Worker deployed to `workers.dev`; CSP and security headers verified on pages and API.
+- [x] Old blog paths 301 to `/`; cache-busted verification done.
+- [x] Secrets set: `TOKEN_PRIVATE_KEY`, `TOKEN_PUBLIC_KEY` (no secrets in git; secret scan clean).
+- [ ] AppSumo webhook/OAuth URLs registered and licensing validation passed — blocked on credentials.
+- [ ] Full AppSumo E2E: purchase → activate → OAuth → Pro → deactivate → Pro removed — blocked.
+- [ ] Custom domain `unpackingtheworld.com` attached and HTTPS verified — needs DNS/zone access.
+- [ ] Real-browser review: tree, segmented control, palette, resize, light/dark, mobile, screen reader.
+- [ ] AppSumo listing assets (hero, screenshots) prepared and listing submitted.
 
 ## Notes
 
