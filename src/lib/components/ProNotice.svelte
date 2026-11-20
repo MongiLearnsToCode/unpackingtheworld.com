@@ -24,7 +24,7 @@
 {#if !dismissed}
   <aside class="pro-notice" role="note" aria-label="Pro features">
     <span>Pro adds certificates, nested unpacking, cron, User-Agent, headers, archives and history.</span>
-    <a href="#redeem">Redeem AppSumo code</a>
+    <a class="link" href="#redeem">Redeem AppSumo code</a>
     <button class="btn small" onclick={dismiss} aria-label="Dismiss Pro notice">Dismiss</button>
   </aside>
 {/if}
