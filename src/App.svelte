@@ -1,34 +1,33 @@
 <script lang="ts">
   import { onMount } from "svelte";
-  import { MAX_ARCHIVE_BYTES, readArchive, type ArchiveEntry } from "./lib/archive/detect.ts";
-  import ArchiveTree from "./lib/components/ArchiveTree.svelte";
+  import type { ArchiveEntry } from "./lib/archive/detect.ts";
+  import { openArchive, previewEntry } from "./lib/archive/session.ts";
+  import InputPane from "./lib/components/InputPane.svelte";
+  import ResultPane from "./lib/components/ResultPane.svelte";
   import CommandPalette, { type Cmd } from "./lib/components/CommandPalette.svelte";
-  import DropZone from "./lib/components/DropZone.svelte";
-  import FormatSwitcher from "./lib/components/FormatSwitcher.svelte";
   import LandingPage from "./lib/components/LandingPage.svelte";
   import LegalPage from "./lib/components/LegalPage.svelte";
-  import LockedFeature from "./lib/components/LockedFeature.svelte";
   import ProNotice from "./lib/components/ProNotice.svelte";
   import RedeemPage from "./lib/components/RedeemPage.svelte";
   import ResizableSplit from "./lib/components/ResizableSplit.svelte";
-  import ResultTree from "./lib/components/ResultTree.svelte";
   import { checkStatusOnline, entitlementState, FEATURES, isUnlocked, loadEntitlements } from "./lib/entitlements.ts";
   import { addHistory, clearHistory, configureHistory, getHistory, setHistoryEnabled } from "./lib/history.ts";
   import { noMatchMessage } from "./lib/messages.ts";
-  import { sampleBase64, sampleCron, sampleHeaders, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUserAgent, sampleUuid } from "./lib/samples.ts";
+  import { buildCommands, type Command } from "./lib/commands.ts";
+  import { isLandingRoute } from "./lib/route.ts";
   import { detect, unpack, unpackers } from "./lib/unpackers/index.ts";
-  import { b64ToBytes, utf8 } from "./lib/unpackers/util.ts";
+  import { decodeShare, shareUrl } from "./lib/share.ts";
 
   const isBrowser = typeof window !== "undefined";
   const formatOptions = unpackers.map((u) => ({ id: u.id, label: u.label }));
+  /** Above this, decoding is skipped instead of locking the tab. */
+  const SOFT_INPUT_LIMIT = 2 * 1024 * 1024;
+  const DEBOUNCE_MS = 150;
 
   interface InstallPromptEvent extends Event {
     prompt(): Promise<void>;
   }
-  const toolHashes = ["#redeem", "#privacy", "#terms", "#refunds", "#faq"];
-  const landingMode = isBrowser && location.pathname === "/"
-    && !location.hash.startsWith("#d=")
-    && !toolHashes.includes(location.hash);
+  const landingMode = isBrowser && isLandingRoute(location.pathname, location.hash);
   let installEvent = $state<InstallPromptEvent | null>(null);
 
   async function installApp() {
@@ -38,10 +37,7 @@
   }
 
   function fromHash(): string {
-    if (!isBrowser) return "";
-    const m = location.hash.match(/^#d=([A-Za-z0-9_-]+)$/);
-    const bytes = m ? b64ToBytes(m[1]) : null;
-    return (bytes && utf8(bytes)) || "";
+    return isBrowser ? decodeShare(location.hash) : "";
   }
 
   let input = $state(fromHash());
@@ -52,7 +48,6 @@
   let paletteOpen = $state(false);
   let chainDepth = $state(0);
   let route = $state(isBrowser ? location.hash : "");
-  let textarea: HTMLTextAreaElement | undefined = $state();
   let archiveEntries = $state<ArchiveEntry[] | null>(null);
   let archiveName = $state("");
   let previewPath = $state("");
@@ -61,22 +56,6 @@
   let historyItems = $state<string[]>([]);
 
   onMount(() => {
-    if (!landingMode) {
-      const toolTitle = "unpacking_the_world · Decode tokens, keys and encodings privately";
-      const toolDescription = "Paste a JWT, PEM key, certificate, cron expression, header block or archive and see a flagged result instantly. Everything runs in your browser; nothing is uploaded.";
-      document.title = toolTitle;
-      const setMeta = (selector: string, value: string, attribute = "content") => {
-        document.querySelector(selector)?.setAttribute(attribute, value);
-      };
-      setMeta('meta[name="description"]', toolDescription);
-      setMeta('link[rel="canonical"]', "https://unpackingtheworld.com/app", "href");
-      setMeta('meta[property="og:title"]', toolTitle);
-      setMeta('meta[property="og:description"]', toolDescription);
-      setMeta('meta[property="og:url"]', "https://unpackingtheworld.com/app");
-      setMeta('meta[name="twitter:title"]', toolTitle);
-      setMeta('meta[name="twitter:description"]', toolDescription);
-    }
-
     let storedHistoryFlag = false;
     try {
       storedHistoryFlag = localStorage.getItem("utw-history-enabled") === "1";
@@ -115,26 +94,51 @@
     const mq = window.matchMedia("(max-width: 800px)");
     const on = () => (narrow = mq.matches);
     mq.addEventListener("change", on);
-    textarea?.focus();
     return () => mq.removeEventListener("change", on);
   });
 
-  const detections = $derived(detect(input));
+  // Decoding is deferred so typing stays responsive while a large paste is
+  // parsed: `detect` + `unpack` are synchronous and run on the main thread.
+  let detectInput = $state(fromHash());
+  let decoding = $state(false);
+  const tooLargeInput = $derived(input.length > SOFT_INPUT_LIMIT);
+
+  $effect(() => {
+    const value = input;
+    if (value === detectInput || value.length > SOFT_INPUT_LIMIT) {
+      decoding = false;
+      return;
+    }
+    if (value.length <= 4096) {
+      detectInput = value;
+      decoding = false;
+      return;
+    }
+    decoding = true;
+    const timer = setTimeout(() => {
+      detectInput = value;
+      decoding = false;
+    }, DEBOUNCE_MS);
+    return () => clearTimeout(timer);
+  });
+
+  const detections = $derived(tooLargeInput ? [] : detect(detectInput));
   const detectedIds = $derived(new Set(detections.map((d) => d.unpacker.id)));
   const active = $derived(override ?? detections[0]?.unpacker.id ?? "");
-  const result = $derived(active && input.trim() ? unpack(active, input, chainDepth) : null);
+  const result = $derived(active && detectInput.trim() && !tooLargeInput ? unpack(active, detectInput, chainDepth) : null);
   const activeLabel = $derived(unpackers.find((u) => u.id === active)?.label ?? "");
   const noMatch = $derived(noMatchMessage(override ? activeLabel : null));
 
   function setInput(v: string) {
     input = v;
+    detectInput = v;
+    decoding = false;
     override = null;
     chainDepth = 0;
     archiveEntries = null;
     previewText = null;
     addHistory(v);
     historyItems = getHistory();
-    textarea?.focus();
   }
 
   function toggleHistory() {
@@ -172,9 +176,7 @@
 
   function shareLink() {
     if (!input.trim()) return say("Nothing to share yet");
-    const bin = Array.from(new TextEncoder().encode(input), (b) => String.fromCharCode(b)).join("");
-    const enc = btoa(bin).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    copy(`${location.origin}${location.pathname}#d=${enc}`, "Link copied. The input stays in the #fragment, never sent to a server");
+    copy(shareUrl(input, location), "Link copied. The input stays in the #fragment, never sent to a server");
   }
 
   function toggleTheme() {
@@ -185,41 +187,18 @@
     } catch {}
   }
 
-  const commands: Cmd[] = [
-    { value: "sample-jwt", label: "Load sample JWT", group: "Samples", run: () => setInput(sampleJwt()) },
-    { value: "sample-b64", label: "Load sample Base64", group: "Samples", run: () => setInput(sampleBase64()) },
-    { value: "sample-url", label: "Load sample URL", group: "Samples", run: () => setInput(sampleUrl()) },
-    { value: "sample-pem", label: "Load sample PEM key", group: "Samples", run: () => setInput(samplePem()) },
-    { value: "sample-entities", label: "Load sample HTML entities", group: "Samples", run: () => setInput(sampleHtmlEntities()) },
-    { value: "sample-timestamp", label: "Load sample Unix timestamp", group: "Samples", run: () => setInput(sampleTimestamp()) },
-    { value: "sample-uuid", label: "Load sample UUID", group: "Samples", run: () => setInput(sampleUuid()) },
-    { value: "sample-cron", label: "Load sample cron expression", group: "Samples", run: () => setInput(sampleCron()) },
-    { value: "sample-ua", label: "Load sample User-Agent", group: "Samples", run: () => setInput(sampleUserAgent()) },
-    { value: "sample-headers", label: "Load sample HTTP headers", group: "Samples", run: () => setInput(sampleHeaders()) },
-    ...unpackers.map((u) => ({ value: `as-${u.id}`, label: `Unpack as ${u.label}`, group: "Force format", run: () => (override = u.id) })),
-    { value: "auto", label: "Auto-detect format", group: "Force format", run: () => (override = null) },
-    { value: "share", label: "Copy share link", group: "Actions", run: shareLink },
-    { value: "clear", label: "Clear input", group: "Actions", run: () => setInput("") },
-    { value: "theme", label: "Toggle light / dark theme", group: "Actions", run: toggleTheme },
-  ];
-
-  async function paste() {
-    try {
-      setInput(await navigator.clipboard.readText());
-    } catch {
-      say("Can’t read the clipboard here. Paste with Ctrl/Cmd+V instead");
-    }
-  }
+  const commands: Command[] = buildCommands({
+    setInput,
+    force: (id) => (override = id),
+    share: shareLink,
+    toggleTheme,
+  });
 
   async function loadArchive(file: File) {
-    if (file.size > MAX_ARCHIVE_BYTES) {
-      say("That archive is over the 200 MB cap. Nothing was uploaded.");
-      return;
-    }
     try {
-      const entries = await readArchive(file);
+      const { name, entries } = await openArchive(file);
       archiveEntries = entries;
-      archiveName = file.name;
+      archiveName = name;
       previewText = null;
       previewPath = "";
       input = "";
@@ -231,18 +210,11 @@
   }
 
   async function selectEntry(entry: ArchiveEntry) {
-    if (entry.size > 65536) {
-      say("Preview is limited to files under 64 kB");
-      return;
-    }
     try {
-      const bytes = await entry.read();
-      if (!bytes) return;
-      const text = new TextDecoder("utf-8", { fatal: true }).decode(bytes);
       previewPath = entry.path;
-      previewText = text;
-    } catch {
-      say("That entry is binary, not text");
+      previewText = await previewEntry(entry);
+    } catch (error) {
+      say(error instanceof Error ? error.message : "Could not preview that entry");
     }
   }
 
@@ -274,176 +246,61 @@
       <LegalPage kind={route.slice(1)} />
     {:else}
       <ProNotice />
+      <h1 class="sr-only">unpacking_the_world decoder</h1>
       {#key narrow}
         <ResizableSplit {narrow}>
         {#snippet inputPane()}
-          <section class="pane input-pane" aria-label="Input">
-            <div class="pane-head">
-              <h2>Input</h2>
-              <div class="actions">
-                <button class="btn" onclick={paste}>Paste</button>
-                <button class="btn" onclick={() => setInput("")} disabled={!input}>Clear</button>
-              </div>
-            </div>
-            <textarea
-              bind:this={textarea}
-              bind:value={input}
-              oninput={() => (override = null)}
-              data-gramm="false"
-              data-1p-ignore
-              data-lpignore
-              spellcheck="false"
-              autocomplete="off"
-              autocapitalize="off"
-              aria-label="Paste a token, encoded string or URL"
-              placeholder="Paste a JWT, Base64 string, PEM key or URL…"
-            ></textarea>
-            <div class="samples">
-              <span class="muted">Try:</span>
-              <button class="chip" onclick={() => setInput(sampleJwt())}>JWT</button>
-              <button class="chip" onclick={() => setInput(sampleBase64())}>Base64</button>
-              <button class="chip" onclick={() => setInput(sampleUrl())}>URL</button>
-            </div>
-            {#if access.archive}
-              <DropZone onFile={loadArchive} />
-            {/if}
-            {#if access.history}
-              <div class="history-strip">
-                <label class="small">
-                  <input type="checkbox" checked={historyEnabled} onchange={toggleHistory} /> Keep history
-                </label>
-                {#if historyEnabled && historyItems.length}
-                  <span class="muted small">Stored only in this browser:</span>
-                  {#each historyItems.slice(0, 4) as item, index (index)}
-                    <button class="chip" title={item} onclick={() => setInput(item)}>{item.slice(0, 18)}{item.length > 18 ? "…" : ""}</button>
-                  {/each}
-                  <button class="btn small" onclick={clearHistoryAll}>Clear history</button>
-                {/if}
-              </div>
-            {:else}
-              <div class="history-strip muted small">
-                {#if access.archive}
-                  Local history is Pro · <a class="link" href="#redeem">Unlock Pro</a>
-                {:else}
-                  Archive peeker and local history are Pro · <a class="link" href="#redeem">Unlock Pro</a>
-                {/if}
-              </div>
-            {/if}
-          </section>
+          <InputPane
+            {input}
+            {setInput}
+            {access}
+            {decoding}
+            onEdit={() => (override = null)}
+            {loadArchive}
+            history={{
+              enabled: historyEnabled,
+              items: historyItems,
+              toggle: toggleHistory,
+              clear: clearHistoryAll,
+            }}
+          />
         {/snippet}
 
         {#snippet resultsPane()}
-          <section class="pane result-pane" aria-label="Result" aria-live="polite">
-            <div class="pane-head">
-              {#if input.trim()}
-                <FormatSwitcher value={active} options={formatOptions} {detectedIds} lockedIds={access.lockedIds} onManual={(id) => (override = id)} />
-                {#if !override && detections[0]}
-                  <span class="detected-chip">Detected: {detections[0].unpacker.label}</span>
-                {/if}
-              {:else}
-                <h2>Result</h2>
-              {/if}
-              <div class="spacer-flex"></div>
-              {#if input.trim()}<span class="muted small share-note">Links contain your input</span>{/if}
-              <button class="btn" onclick={shareLink} disabled={!input.trim()}>Copy link</button>
-            </div>
-
-            <div class="result-body">
-              {#if !input.trim() && archiveEntries}
-                <div class="archive-view">
-                  <div class="section-head">
-                    <h3>{archiveName} · {archiveEntries.length} entries</h3>
-                    <button class="btn small" onclick={() => { archiveEntries = null; previewText = null; }}>Close archive</button>
-                  </div>
-                  <ArchiveTree entries={archiveEntries} onSelect={selectEntry} />
-                  {#if previewText !== null}
-                    <div class="archive-preview">
-                      <div class="section-head">
-                        <h3>{previewPath}</h3>
-                        <div class="actions">
-                          <button class="btn small" onclick={unpackPreview}>Unpack this</button>
-                          <button class="btn small" onclick={() => copy(previewText ?? "", "Copied text")}>Copy</button>
-                        </div>
-                      </div>
-                      <pre class="text-out">{previewText}</pre>
-                    </div>
-                  {/if}
-                </div>
-              {:else if !input.trim()}
-                <div class="empty">
-                  <p class="big">Paste something to unpack it.</p>
-                  <p class="muted">JWTs, Base64 / Base64url, PEM keys, certificates and percent-encoded URLs. The format is detected as you type.</p>
-                  <p class="muted"><kbd>Ctrl/⌘</kbd> + <kbd>K</kbd> opens the command palette.</p>
-                </div>
-              {:else if !result}
-                <div class="empty">
-                  <p class="big">{noMatch.headline}</p>
-                  <p class="muted">{noMatch.hint}</p>
-                  {#if detections.length}
-                    <p class="muted">
-                      Matched: {#each detections as d, i (d.unpacker.id)}{i ? ", " : ""}<button class="link" onclick={() => (override = d.unpacker.id)}>{d.unpacker.label}</button>{/each}.
-                    </p>
-                  {/if}
-                </div>
-              {:else if active && access.lockedIds.has(active)}
-                <LockedFeature
-                  name={FEATURES[active as keyof typeof FEATURES]?.name ?? active}
-                  description={FEATURES[active as keyof typeof FEATURES]?.description ?? "This is a Pro feature."}
-                />
-              {:else}
-                {#if result.headline}
-                  <div class="headline" data-tone={result.flags.find((f) => f.text === result.headline)?.severity}>{result.headline}</div>
-                {/if}
-
-                {#if result.flags.length}
-                  <ul class="flags">
-                    {#each result.flags as f (f.text)}
-                      <li data-tone={f.severity}><span class="dot" aria-hidden="true"></span>{f.text}</li>
-                    {/each}
-                  </ul>
-                {/if}
-
-                {#if result.fields.length}
-                  <dl class="fields">
-                    {#each result.fields as f (f.label)}
-                      <dt>{f.label}</dt>
-                      <dd><button class="copyable" onclick={() => copy(f.value, `Copied ${f.label}`)} title="Click to copy">{f.value}</button></dd>
-                    {/each}
-                  </dl>
-                {/if}
-
-                {#each result.sections as s (s.title)}
-                  <ResultTree title={s.title} json={s.json} onCopy={copy} />
-                {/each}
-
-                {#if result.text !== undefined}
-                  <div class="section">
-                    <div class="section-head">
-                      <h3>Decoded</h3>
-                      <button class="btn small" onclick={() => copy(result.text ?? "", "Copied")}>Copy</button>
-                    </div>
-                    <pre class="text-out">{result.text}</pre>
-                  </div>
-                {/if}
-
-                {#if access.nested && result.next && result.next.length}
-                  <div class="chain">
-                    <span class="muted small">Unpack result:</span>
-                    {#each result.next as step (step.input + step.id)}
-                      <button
-                        class="chip"
-                        onclick={() => {
-                          input = step.input;
-                          override = step.id;
-                          chainDepth += 1;
-                        }}
-                      >{step.label}</button>
-                    {/each}
-                  </div>
-                {/if}
-              {/if}
-            </div>
-          </section>
+          <ResultPane
+            {input}
+            {access}
+            {active}
+            {detectedIds}
+            detectedLabel={detections[0]?.unpacker.label ?? ""}
+            options={formatOptions}
+            onManual={(id) => (override = id)}
+            autoDetected={!override && Boolean(detections[0])}
+            {result}
+            {noMatch}
+            {detections}
+            onShare={shareLink}
+            onCopy={copy}
+            onChain={(next, id) => {
+              input = next;
+              override = id;
+              chainDepth += 1;
+            }}
+            archive={archiveEntries
+              ? {
+                  name: archiveName,
+                  entries: archiveEntries,
+                  previewPath,
+                  previewText,
+                  onSelect: selectEntry,
+                  onUnpackPreview: unpackPreview,
+                  onClose: () => {
+                    archiveEntries = null;
+                    previewText = null;
+                  },
+                }
+              : null}
+          />
         {/snippet}
         </ResizableSplit>
       {/key}

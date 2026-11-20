@@ -1,7 +1,9 @@
 import assert from "node:assert/strict";
-import { zipSync, gzipSync, strToU8 } from "fflate";
+import { deflateSync, gzipSync, strToU8, zipSync } from "fflate";
 import { test } from "node:test";
 import { MAX_ARCHIVE_BYTES, readArchive } from "./detect.ts";
+import { gunzipCapped, inflateCapped } from "./inflate.ts";
+import { MAX_ARCHIVE_ENTRIES, MAX_UNPACKED_ENTRY_BYTES } from "./limits.ts";
 
 function file(bytes: Uint8Array): File {
   return new File([bytes], "test.archive");
@@ -105,14 +107,45 @@ test("enforces the 200 MB cap before reading anything", async () => {
   await assert.rejects(() => readArchive(huge), /200 MB limit/);
 });
 
-test("lists a 50,000-entry archive without executing or rendering entries", async () => {
+test("lists a large archive without executing or rendering entries", async () => {
   const zippable: Record<string, Uint8Array> = {};
-  for (let i = 0; i < 50000; i++) zippable[`files/${i}.txt`] = new Uint8Array(0);
+  for (let i = 0; i < 5000; i++) zippable[`files/${i}.txt`] = new Uint8Array(0);
   const bytes = zipSync(zippable);
   const started = performance.now();
   const entries = await readArchive(file(bytes));
   const elapsed = performance.now() - started;
-  assert.equal(entries.length, 50000);
+  assert.equal(entries.length, 5000);
   assert.ok(entries[0].path.startsWith("files/"));
-  console.log(`  50,000-entry listing: ${entries.length} entries in ${elapsed.toFixed(0)} ms, ${(bytes.length / 1024).toFixed(0)} kB archive`);
+  console.log(`  5,000-entry listing: ${entries.length} entries in ${elapsed.toFixed(0)} ms, ${(bytes.length / 1024).toFixed(0)} kB archive`);
+});
+
+test("rejects an archive with more entries than the safety cap", async () => {
+  const zippable: Record<string, Uint8Array> = {};
+  for (let i = 0; i <= MAX_ARCHIVE_ENTRIES; i++) zippable[`files/${i}.txt`] = new Uint8Array(0);
+  await assert.rejects(() => readArchive(file(zipSync(zippable))), /entries, so it was rejected/);
+});
+
+test("rejects a gzip member that expands past the budget", async () => {
+  const bomb = gzipSync(new Uint8Array(4096));
+  assert.throws(() => gunzipCapped(bomb, 1024), /expands beyond/);
+  const ok = gunzipCapped(gzipSync(new TextEncoder().encode("hello")), 1024);
+  assert.equal(new TextDecoder().decode(ok), "hello");
+});
+
+test("rejects a deflate entry that expands past the budget", async () => {
+  const bomb = deflateSync(new Uint8Array(4096));
+  assert.throws(() => inflateCapped(bomb, 1024), /safety limit/);
+  const ok = inflateCapped(deflateSync(new TextEncoder().encode("hello")), 1024);
+  assert.equal(new TextDecoder().decode(ok), "hello");
+});
+
+test("rejects an entry that declares more than the per-entry budget", async () => {
+  const zippable: Record<string, Uint8Array> = {};
+  zippable["big.bin"] = new Uint8Array(0);
+  const bytes = zipSync(zippable);
+  const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const eocd = bytes.length - 22;
+  const centralOffset = dv.getUint32(eocd + 16, true);
+  dv.setUint32(centralOffset + 24, MAX_UNPACKED_ENTRY_BYTES + 1, true);
+  await assert.rejects(() => readArchive(file(bytes)), /safety limit/);
 });

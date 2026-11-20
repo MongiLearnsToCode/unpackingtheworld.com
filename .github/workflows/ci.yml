@@ -1,0 +1,52 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Types and component diagnostics
+        run: npm run check
+
+      - name: Unit tests
+        run: npm test
+
+      - name: Production build (includes prerender)
+        run: npm run build
+
+      - name: Prerendered output is present and has content
+        run: |
+          set -euo pipefail
+          test -s dist/index.html
+          test -s dist/app.html
+          test -s dist/404.html
+          test -s dist/sitemap.xml
+          grep -q '<h1' dist/index.html
+          grep -q 'application/ld+json' dist/index.html
+          node -e "const h=require('fs').readFileSync('dist/index.html','utf8'); if(/<!--app-html-->|<!--seo-jsonld-->/.test(h)) { console.error('prerender placeholders survived'); process.exit(1) }"
+
+      - name: No secrets in tracked files
+        run: |
+          set -euo pipefail
+          if git grep -nE -- 'BEGIN (RSA |EC |OPENSSH |)?PRIVATE KEY|APPSUMO_CLIENT_SECRET' -- . \
+              ':(exclude)README.md' ':(exclude)docs' ':(exclude)tasks/*' ':(exclude)**/*.test.ts'; then
+            echo "Secret-like content found"; exit 1
+          fi

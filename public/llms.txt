@@ -1,0 +1,32 @@
+# unpacking_the_world
+
+> A paste-first decoder that runs entirely in the browser. JWTs, PEM keys,
+> X.509 certificates, cron expressions, HTTP header/cookie blocks, timestamps,
+> UUIDs, HTML entities, URLs, Base64 and archives (zip, tar, tar.gz) are decoded
+> locally. Nothing is uploaded, there is no analytics and there is no sign-up.
+
+## Canonical pages
+
+- [unpacking_the_world](https://unpackingtheworld.com/): what the tool does, free
+  vs Pro, and the FAQ.
+- [Decoder](https://unpackingtheworld.com/app): the tool itself.
+- [Privacy](https://unpackingtheworld.com/#privacy): no upload, no tracking, no
+  third-party requests; files are read in the tab and discarded.
+- [Terms](https://unpackingtheworld.com/#terms) and
+  [refunds](https://unpackingtheworld.com/#refunds).
+
+## What it does
+
+Free: JWT (header, claims, expiry and signature check), Base64, URL, HTML
+entities, Unix timestamps, UUIDs, PEM basics.
+
+Pro: X.509 certificate inspection, nested decoding chains, cron expression
+explanation, User-Agent parsing, HTTP header/cookie analysis, archive peeking,
+local history and offline use. Pro is a one-time AppSumo licence stored in the
+browser; entitlements are verified offline from a signed token.
+
+## Limits worth knowing
+
+- Archives are capped at 200 MB compressed, 64 MB per entry and 512 MB expanded.
+- Inputs over 2 MB are not auto-detected, to keep the tab responsive.
+- Decoding is local, so there is no server-side API to call.

@@ -1,4 +1,23 @@
+# unpacking_the_world — a browser-only decoder. Everything is public and
+# crawlable; there is no user content and no login wall.
 User-agent: *
+Allow: /
+
+# AI answer engines and training crawlers are deliberately allowed: the tool's
+# whole value is being discoverable when someone asks "how do I decode a JWT".
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: Claude-SearchBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
 Allow: /
 
 Sitemap: https://unpackingtheworld.com/sitemap.xml

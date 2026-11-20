@@ -1,4 +1,13 @@
-import { inflateSync } from "fflate";
+import {
+  ENTRY_TOO_LARGE_MESSAGE,
+  EXPANDS_TOO_MUCH_MESSAGE,
+  MAX_ARCHIVE_ENTRIES,
+  MAX_UNPACKED_ENTRY_BYTES,
+  MAX_UNPACKED_TOTAL_BYTES,
+  TOO_MANY_ENTRIES_MESSAGE,
+} from "./limits.ts";
+import { inflateCapped } from "./inflate.ts";
+import type { ArchiveSource } from "./source.ts";
 
 export interface ArchiveEntry {
   path: string;
@@ -6,11 +15,6 @@ export interface ArchiveEntry {
   compressedSize: number;
   directory: boolean;
   read(): Promise<Uint8Array | null>;
-}
-
-interface Source {
-  size: number;
-  slice(start: number, end: number): { arrayBuffer(): Promise<ArrayBuffer> };
 }
 
 const EOCD_SIGNATURE = 0x06054b50;
@@ -21,17 +25,17 @@ function view(data: Uint8Array): DataView {
   return new DataView(data.buffer as ArrayBuffer, data.byteOffset, data.byteLength);
 }
 
-async function tail(source: Source, length: number): Promise<{ bytes: Uint8Array; start: number }> {
+async function tail(source: ArchiveSource, length: number): Promise<{ bytes: Uint8Array; start: number }> {
   const start = Math.max(0, source.size - length);
   return { bytes: new Uint8Array(await source.slice(start, source.size).arrayBuffer()), start };
 }
 
-export async function isZip(source: Source): Promise<boolean> {
+export async function isZip(source: ArchiveSource): Promise<boolean> {
   const head = new Uint8Array(await source.slice(0, 4).arrayBuffer());
   return head.length >= 4 && head[0] === 0x50 && head[1] === 0x4b && [0x03, 0x05, 0x07].includes(head[2]);
 }
 
-export async function readZip(source: Source): Promise<ArchiveEntry[]> {
+export async function readZip(source: ArchiveSource): Promise<ArchiveEntry[]> {
   const { bytes: endBytes } = await tail(source, Math.min(source.size, 22 + 65535));
   let eocd = -1;
   for (let i = endBytes.length - 22; i >= 0; i--) {
@@ -51,9 +55,13 @@ export async function readZip(source: Source): Promise<ArchiveEntry[]> {
     throw new Error("ZIP64 archives are not supported");
   }
   if (entries === 0) return [];
+  if (entries > MAX_ARCHIVE_ENTRIES) throw new Error(TOO_MANY_ENTRIES_MESSAGE);
   const central = new Uint8Array(await source.slice(centralOffset, centralOffset + centralSize).arrayBuffer());
   const cd = view(central);
   const result: ArchiveEntry[] = [];
+  // Declared sizes are attacker-controlled, so they are a budget hint, not a
+  // guarantee; the streaming inflate below enforces the real ceiling.
+  let declaredTotal = 0;
   let pos = 0;
 
   for (let i = 0; i < entries; i++) {
@@ -71,6 +79,10 @@ export async function readZip(source: Source): Promise<ArchiveEntry[]> {
     const path = new TextDecoder().decode(nameBytes);
     pos += 46 + nameLength + extraLength + commentLength;
 
+    declaredTotal += size;
+    if (size > MAX_UNPACKED_ENTRY_BYTES) throw new Error(ENTRY_TOO_LARGE_MESSAGE);
+    if (declaredTotal > MAX_UNPACKED_TOTAL_BYTES) throw new Error(EXPANDS_TOO_MUCH_MESSAGE);
+
     result.push({
       path,
       size,
@@ -84,8 +96,11 @@ export async function readZip(source: Source): Promise<ArchiveEntry[]> {
         const localExtra = view(header).getUint16(28, true);
         const start = localOffset + 30 + localName + localExtra;
         const raw = new Uint8Array(await source.slice(start, start + compressedSize).arrayBuffer());
-        if (method === 0) return raw;
-        if (method === 8) return inflateSync(raw);
+        if (method === 0) {
+          if (raw.length > MAX_UNPACKED_ENTRY_BYTES) throw new Error(ENTRY_TOO_LARGE_MESSAGE);
+          return raw;
+        }
+        if (method === 8) return inflateCapped(raw, MAX_UNPACKED_ENTRY_BYTES);
         throw new Error(`Unsupported ZIP compression method ${method}`);
       },
     });

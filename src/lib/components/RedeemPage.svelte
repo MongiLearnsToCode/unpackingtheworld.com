@@ -5,6 +5,11 @@
   const env = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
   const redeemUrl = env?.VITE_APPSUMO_REDEEM_URL || "https://appsumo.com/";
 
+  /** Marks this browser as the one that started the AppSumo sign-in. */
+  function prepareSignIn() {
+    void fetch("/api/appsumo/start", { method: "POST", keepalive: true }).catch(() => {});
+  }
+
   type Status = "idle" | "working" | "done" | "error";
   let status = $state<Status>("idle");
   let message = $state("");
@@ -33,9 +38,9 @@
 
 <section class="redeem" aria-labelledby="redeem-title">
   <div class="redeem-card">
-    <h2 id="redeem-title" class="big">Redeem your AppSumo code</h2>
+    <h1 id="redeem-title" class="big">Redeem your AppSumo code</h1>
     <p class="muted">Redeem on AppSumo, then come back here. Your Pro access is stored in this browser and verified offline — nothing you paste is ever sent anywhere.</p>
-    <a class="btn" href={redeemUrl} rel="noopener noreferrer" target="_blank">Go to AppSumo</a>
+    <a class="btn" href={redeemUrl} rel="noopener noreferrer" target="_blank" onclick={prepareSignIn}>Go to AppSumo</a>
     {#if status === "working"}<p role="status">Activating Pro…</p>{/if}
     {#if status === "done"}<p class="good-text" role="status">Pro is unlocked on this browser.</p>{/if}
     {#if status === "error"}<p class="bad-text" role="alert">{message}</p>{/if}

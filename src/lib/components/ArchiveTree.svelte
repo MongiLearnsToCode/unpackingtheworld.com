@@ -73,6 +73,13 @@
     scrollTop = element.scrollTop;
   }
 
+  /** Row activation previews a file; branches keep their expand/collapse behaviour. */
+  function activate(value: string) {
+    const node = built.byValue.get(value);
+    if (!node?.entry || node.entry.directory) return;
+    onSelect?.(node.entry);
+  }
+
   function formatSize(bytes: number): string {
     if (bytes < 1024) return `${bytes} B`;
     if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} kB`;
@@ -81,7 +88,15 @@
 </script>
 
 <div class="archive-scroll" bind:this={scroller} onscroll={(event) => (scrollTop = event.currentTarget.scrollTop)}>
-  <Tree aria-label="Archive contents" {items} bind:expanded {onHighlight} style="height: {rows.length * rowHeight}px">
+  <Tree
+    aria-label="Archive contents"
+    {items}
+    bind:expanded
+    {onHighlight}
+    onAction={activate}
+    pendingAnnouncement="Loading that file’s preview…"
+    style="height: {rows.length * rowHeight}px"
+  >
     {#each rows.slice(start, end) as { item, index } (item.value)}
       {@const node = built.byValue.get(item.value)}
       <TreeItem value={item.value} style="top: {index * rowHeight}px">
@@ -94,7 +109,8 @@
           <span class="archive-name">{item.label}</span>
           {#if node?.entry}<span class="archive-size">{formatSize(node.size)}</span>{/if}
           {#if node?.entry && !node.entry.directory}
-            <button class="link small" onclick={() => node.entry && onSelect?.(node.entry)}>preview</button>
+            <span class="archive-action" aria-hidden="true">preview</span>
+            <span class="sr-only">Press Enter to preview this file</span>
           {/if}
         </TreeItemLabel>
       </TreeItem>

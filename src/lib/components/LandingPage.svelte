@@ -1,10 +1,18 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import { FEATURES } from "../entitlements.ts";
   import { LEGAL } from "../legal.ts";
   import { sampleJwt } from "../samples.ts";
   import { unpack, unpackers } from "../unpackers/index.ts";
 
-  const demo = unpack("jwt", sampleJwt())!;
+  // The demo sample is generated from the current clock, so it must not be part
+  // of the prerendered markup: a build-time token would already be expired by
+  // the time anyone reads it. The static fallback below is what crawlers see.
+  let hydrated = $state(false);
+  onMount(() => {
+    hydrated = true;
+  });
+  const demo = $derived(hydrated ? unpack("jwt", sampleJwt()) : null);
   const freeFeatures = unpackers.filter((unpacker) => FEATURES[unpacker.id as keyof typeof FEATURES]?.tier === "free");
   const proFeatures = unpackers.filter((unpacker) => FEATURES[unpacker.id as keyof typeof FEATURES]?.tier === "pro");
   const faq = LEGAL.faq.sections;
@@ -26,7 +34,7 @@
     <section class="hero">
       <div class="hero-copy">
         <h1>Paste anything.<br />See everything.<br /><span class="muted">Upload nothing.</span></h1>
-        <p class="lede">Unpacking the World detects what you pasted — JWTs, private keys, certificates, cron expressions, headers, timestamps, UUIDs and archives — and shows you what matters, entirely in your browser.</p>
+        <p class="lede">unpacking_the_world detects what you pasted — JWTs, private keys, certificates, cron expressions, headers, timestamps, UUIDs and archives — and shows you what matters, entirely in your browser.</p>
         <div class="hero-actions">
           <a class="btn solid" href="/app">Open the tool</a>
           <a class="btn" href="#formats">See the formats</a>
@@ -38,17 +46,31 @@
         <div class="demo-bar"><span class="dot red"></span><span class="dot amber"></span><span class="dot green"></span><span class="demo-url">unpackingtheworld.com/app</span></div>
         <div class="demo-body">
           <span class="detected-chip">Detected: JWT</span>
-          <div class="headline" data-tone={demo.headline && demo.flags.find((f) => f.text === demo.headline)?.severity}>{demo.headline}</div>
-          <ul class="flags">
-            {#each demo.flags.slice(0, 3) as flag (flag.text)}
-              <li data-tone={flag.severity}><span class="dot" aria-hidden="true"></span>{flag.text}</li>
-            {/each}
-          </ul>
-          <dl class="fields">
-            {#each demo.fields.slice(0, 3) as field (field.label)}
-              <dt>{field.label}</dt><dd class="mono">{field.value.length > 34 ? `${field.value.slice(0, 34)}…` : field.value}</dd>
-            {/each}
-          </dl>
+          {#if demo}
+            <div class="headline" data-tone={demo.headline && demo.flags.find((f) => f.text === demo.headline)?.severity}>{demo.headline}</div>
+            <ul class="flags">
+              {#each demo.flags.slice(0, 3) as flag (flag.text)}
+                <li data-tone={flag.severity}><span class="dot" aria-hidden="true"></span>{flag.text}</li>
+              {/each}
+            </ul>
+            <dl class="fields">
+              {#each demo.fields.slice(0, 3) as field (field.label)}
+                <dt>{field.label}</dt><dd class="mono">{field.value.length > 34 ? `${field.value.slice(0, 34)}…` : field.value}</dd>
+              {/each}
+            </dl>
+          {:else}
+            <div class="headline" data-tone="good">Valid token, decoded in this tab</div>
+            <ul class="flags">
+              <li data-tone="good"><span class="dot" aria-hidden="true"></span>Signature algorithm: HS256</li>
+              <li data-tone="good"><span class="dot" aria-hidden="true"></span>Claims readable without the key</li>
+              <li data-tone="info"><span class="dot" aria-hidden="true"></span>Nothing sent over the network</li>
+            </ul>
+            <dl class="fields">
+              <dt>Issuer</dt><dd class="mono">https://auth.example.com</dd>
+              <dt>Subject</dt><dd class="mono">user_8f3a21</dd>
+              <dt>Audience</dt><dd class="mono">api.example.com</dd>
+            </dl>
+          {/if}
           <div class="demo-foot mono">header · payload · signature</div>
         </div>
       </div>
@@ -120,7 +142,7 @@
 
     <section class="section story">
       <h2>Why this exists</h2>
-      <p>Developers paste sensitive strings into decoder sites every day. Most of those sites are single-purpose, cluttered, or send the input somewhere. Unpacking the World is the opposite: one page, an honest flagged result, and a promise it can keep — nothing you paste leaves your browser.</p>
+      <p>Developers paste sensitive strings into decoder sites every day. Most of those sites are single-purpose, cluttered, or send the input somewhere. unpacking_the_world is the opposite: one page, an honest flagged result, and a promise it can keep — nothing you paste leaves your browser.</p>
     </section>
 
     <section class="section" id="faq">

@@ -1,7 +1,8 @@
-const CACHE = "utw-v1";
+const CACHE = "utw-v2";
+const PRECACHE = ["/", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(["/", "/index.html", "/icon.svg"])).then(() => self.skipWaiting()));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener("activate", (event) => {
@@ -17,6 +18,8 @@ self.addEventListener("fetch", (event) => {
   if (request.method !== "GET") return;
   const url = new URL(request.url);
   if (url.origin !== self.location.origin) return;
+  // Licence checks must always hit the network: a cached status would pin Pro on.
+  if (url.pathname.startsWith("/api/")) return;
 
   event.respondWith(
     fetch(request)
@@ -31,7 +34,7 @@ self.addEventListener("fetch", (event) => {
         const cached = await caches.match(request);
         if (cached) return cached;
         if (request.mode === "navigate") {
-          const shell = await caches.match("/index.html");
+          const shell = await caches.match("/");
           if (shell) return shell;
         }
         return new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } });

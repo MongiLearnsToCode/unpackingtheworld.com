@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { handleExchange, handleStatus, handleWebhook, verifyWebhookSignature } from "./appsumo.ts";
+import { handleExchange, handleOAuth, handleOAuthStart, handleStatus, handleWebhook, isTimestampFresh, verifyWebhookSignature } from "./appsumo.ts";
 import type { Env } from "./types.ts";
 
 const API_KEY = "test-api-key";
@@ -29,6 +29,8 @@ function env(): Env {
     ASSETS: {} as Env["ASSETS"],
   };
 }
+
+const now = () => String(Math.floor(Date.now() / 1000));
 
 function sign(raw: string, timestamp: string, key = API_KEY, separator = ""): string {
   return createHmac("sha256", key).update(`${timestamp}${separator}${raw}`).digest("hex");
@@ -80,7 +82,8 @@ test("test events get a success response without changing state", async () => {
   const e = env();
   const payload = event({ test: true, license_key: "00000000-aaaa-1111-bbbb-abcdef012345" });
   const raw = JSON.stringify(payload);
-  const response = await handleWebhook(webhookRequest(payload, sign(raw, "1700000000"), "1700000000"), e);
+  const stamp = now();
+  const response = await handleWebhook(webhookRequest(payload, sign(raw, stamp), stamp), e);
   assert.equal(response.status, 200);
   assert.deepEqual(await response.json(), { event: "activate", success: true });
   assert.equal(await e.LICENSES.get("license:00000000-aaaa-1111-bbbb-abcdef012345"), null);
@@ -88,7 +91,7 @@ test("test events get a success response without changing state", async () => {
 
 test("rejects a webhook with a bad signature", async () => {
   const payload = event();
-  const response = await handleWebhook(webhookRequest(payload, "deadbeef", "1700000000"), env());
+  const response = await handleWebhook(webhookRequest(payload, "deadbeef", now()), env());
   assert.equal(response.status, 401);
 });
 
@@ -99,7 +102,8 @@ test("handles purchase, activate, deactivate and reactivation", async () => {
   for (const [index, name] of sequence.entries()) {
     const payload = event({ event: name, created_at: 1111111111 + index });
     const raw = JSON.stringify(payload);
-    const response = await handleWebhook(webhookRequest(payload, sign(raw, "1700000000"), "1700000000"), e);
+    const stamp = now();
+  const response = await handleWebhook(webhookRequest(payload, sign(raw, stamp), stamp), e);
     assert.equal(response.status, 200);
   }
   const record = JSON.parse((await e.LICENSES.get(`license:${key}`))!) as { status: string; events: unknown[] };
@@ -111,7 +115,8 @@ test("a replayed webhook is ignored", async () => {
   const e = env();
   const payload = event();
   const raw = JSON.stringify(payload);
-  const request = () => webhookRequest(payload, sign(raw, "1700000000"), "1700000000");
+  const stamp = now();
+  const request = () => webhookRequest(payload, sign(raw, stamp), stamp);
   await handleWebhook(request(), e);
   await handleWebhook(request(), e);
   const record = JSON.parse((await e.LICENSES.get(`license:${event().license_key}`))!) as { events: unknown[] };
@@ -123,9 +128,10 @@ test("upgrade deactivates the previous key", async () => {
   const oldKey = "11111111-1111-1111-1111-111111111111";
   const newKey = event().license_key;
   const first = event({ license_key: oldKey, event: "activate", created_at: 1 });
-  await handleWebhook(webhookRequest(first, sign(JSON.stringify(first), "1700000000"), "1700000000"), e);
+  const stamp = now();
+  await handleWebhook(webhookRequest(first, sign(JSON.stringify(first), stamp), stamp), e);
   const upgrade = event({ event: "upgrade", prev_license_key: oldKey, tier: 2, created_at: 2 });
-  await handleWebhook(webhookRequest(upgrade, sign(JSON.stringify(upgrade), "1700000000"), "1700000000"), e);
+  await handleWebhook(webhookRequest(upgrade, sign(JSON.stringify(upgrade), stamp), stamp), e);
   const old = JSON.parse((await e.LICENSES.get(`license:${oldKey}`))!) as { status: string };
   const current = JSON.parse((await e.LICENSES.get(`license:${newKey}`))!) as { status: string; tier: number };
   assert.equal(old.status, "deactivated");
@@ -146,4 +152,49 @@ test("exchange codes are single use", async () => {
   assert.deepEqual(await first.json(), { token: "a-signed-token" });
   const second = await postJson("/api/license/exchange", { code: "abc123" }, e);
   assert.equal(second.status, 400);
+});
+
+test("rejects a replayed payload outside the freshness window", async () => {
+  const e = env();
+  const payload = event();
+  const raw = JSON.stringify(payload);
+  const stale = String(Math.floor(Date.now() / 1000) - 3600);
+  const response = await handleWebhook(webhookRequest(payload, sign(raw, stale), stale), e);
+  assert.equal(response.status, 401);
+  assert.deepEqual(await response.json(), { error: "stale timestamp" });
+  assert.equal(await e.LICENSES.get(`license:${payload.license_key}`), null);
+});
+
+test("freshness window accepts near-now and rejects non-numeric", () => {
+  assert.equal(isTimestampFresh(String(Math.floor(Date.now() / 1000))), true);
+  assert.equal(isTimestampFresh("not-a-number"), false);
+  assert.equal(isTimestampFresh(""), false);
+});
+
+test("an unsigned test ping cannot name a licence key", async () => {
+  const e = env();
+  const payload = event({ test: true });
+  const response = await handleWebhook(
+    new Request("https://example.com/api/appsumo/webhook", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    }),
+    e,
+  );
+  assert.equal(response.status, 401);
+});
+
+test("licence sign-in must start from this browser", async () => {
+  const e = env();
+  const start = await handleOAuthStart(new Request("https://example.com/api/appsumo/start", { method: "POST" }), e);
+  assert.equal(start.status, 200);
+  const cookie = start.headers.get("Set-Cookie") ?? "";
+  assert.match(cookie, /utw_oauth=[0-9a-f]{32}/);
+  const state = cookie.match(/utw_oauth=([0-9a-f]{32})/)?.[1] ?? "";
+  assert.equal(await e.LICENSES.get(`oauth_state:${state}`), "1");
+
+  const bare = await handleOAuth(new Request("https://example.com/api/appsumo/oauth?code=abc"), e);
+  assert.equal(bare.status, 403);
+  assert.match(await bare.text(), /must start from the tool/);
 });

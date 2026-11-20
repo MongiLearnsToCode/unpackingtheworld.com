@@ -3,6 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="/theme.js"></script>
     <title>unpacking_the_world — Decode anything, upload nothing</title>
     <meta name="description" content="Decode JWTs, private keys, certificates, cron expressions, headers, timestamps, UUIDs and archives in your browser. Nothing you paste is uploaded — no analytics, no sign-up." />
     <meta name="robots" content="index, follow" />
@@ -25,10 +26,13 @@
     <meta name="twitter:image" content="https://unpackingtheworld.com/og-image.png" />
 
     <link rel="manifest" href="/manifest.webmanifest" />
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>📦</text></svg>" />
+    <link rel="icon" href="/icon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+
+    <!--seo-jsonld-->
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app"><!--app-html--></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

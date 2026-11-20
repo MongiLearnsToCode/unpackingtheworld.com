@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/icons.mjs && node scripts/prerender.mjs",
     "preview": "vite preview",
     "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.worker.json --noEmit",
     "test": "node --experimental-strip-types --test src/lib/unpackers/*.test.ts src/lib/archive/*.test.ts src/lib/*.test.ts worker/*.test.ts",

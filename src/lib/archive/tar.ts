@@ -1,18 +1,21 @@
-import { gunzipSync } from "fflate";
+import {
+  ENTRY_TOO_LARGE_MESSAGE,
+  EXPANDS_TOO_MUCH_MESSAGE,
+  MAX_ARCHIVE_ENTRIES,
+  MAX_UNPACKED_ENTRY_BYTES,
+  MAX_UNPACKED_TOTAL_BYTES,
+  TOO_MANY_ENTRIES_MESSAGE,
+} from "./limits.ts";
+import { gunzipCapped } from "./inflate.ts";
+import type { ArchiveSource } from "./source.ts";
 import type { ArchiveEntry } from "./zip.ts";
 
-interface Source {
-  size: number;
-  slice(start: number, end: number): { arrayBuffer(): Promise<ArrayBuffer> };
-  arrayBuffer(): Promise<ArrayBuffer>;
-}
-
-export async function isGzip(source: Source): Promise<boolean> {
+export async function isGzip(source: ArchiveSource): Promise<boolean> {
   const head = new Uint8Array(await source.slice(0, 2).arrayBuffer());
   return head.length === 2 && head[0] === 0x1f && head[1] === 0x8b;
 }
 
-export async function isTar(source: Source): Promise<boolean> {
+export async function isTar(source: ArchiveSource): Promise<boolean> {
   const head = new Uint8Array(await source.slice(0, 512).arrayBuffer());
   if (head.length < 512) return false;
   const magic = new TextDecoder().decode(head.subarray(257, 262));
@@ -34,11 +37,12 @@ function rounded(size: number): number {
   return Math.ceil(size / 512) * 512;
 }
 
-export async function readTar(source: Source): Promise<ArchiveEntry[]> {
-  let bytes = new Uint8Array(await source.arrayBuffer());
-  if (await isGzip(source)) bytes = gunzipSync(bytes);
+export async function readTar(source: ArchiveSource): Promise<ArchiveEntry[]> {
+  let bytes: Uint8Array<ArrayBufferLike> = new Uint8Array(await source.arrayBuffer());
+  if (await isGzip(source)) bytes = gunzipCapped(bytes, MAX_UNPACKED_TOTAL_BYTES);
 
   const entries: ArchiveEntry[] = [];
+  let totalSize = 0;
   let offset = 0;
   let longName = "";
 
@@ -51,6 +55,7 @@ export async function readTar(source: Source): Promise<ArchiveEntry[]> {
     const prefix = readString(header, 345, 155);
     const path = prefix ? `${prefix}/${name}` : name;
     const payload = bytes.subarray(offset + 512, offset + 512 + size);
+    if (size > MAX_UNPACKED_ENTRY_BYTES) throw new Error(ENTRY_TOO_LARGE_MESSAGE);
 
     if (type === "L") {
       longName = new TextDecoder().decode(payload).replace(/\0+$/, "");
@@ -67,6 +72,9 @@ export async function readTar(source: Source): Promise<ArchiveEntry[]> {
           return type === "5" ? null : bytes.subarray(dataStart, dataStart + size);
         },
       });
+      totalSize += size;
+      if (entries.length > MAX_ARCHIVE_ENTRIES) throw new Error(TOO_MANY_ENTRIES_MESSAGE);
+      if (totalSize > MAX_UNPACKED_TOTAL_BYTES) throw new Error(EXPANDS_TOO_MUCH_MESSAGE);
     }
     offset += 512 + rounded(size);
   }
