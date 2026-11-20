@@ -88,20 +88,20 @@
   - [x] 3.10 Add a development-only way to simulate Pro (build flag, not shipped in production builds) so you can test the UI without AppSumo.
 
 - [ ] 4.0 Cloudflare Workers deployment and AppSumo licensing (PRD Req 28–33, 41, 42)
-  - [ ] 4.1 Read the current Cloudflare docs for Workers Static Assets, and the AppSumo Licensing guide (`docs.licensing.appsumo.com`): webhook events, signature verification, OAuth steps. Note any differences from this plan in `tasks/living_log.md`.
-  - [ ] 4.2 Add `wrangler.jsonc` with `assets.directory = "./dist"`, a `main` Worker for `/api/*`, a current `compatibility_date`, and a KV namespace (or D1; decide per Open Question 9) binding. Add `wrangler` as an exact-pinned dev dependency and `npm run deploy` / `npm run dev:worker` scripts.
-  - [ ] 4.3 Deploy a hello-world version to a `workers.dev` URL first; confirm the SPA loads and `/api/health` returns 200.
-  - [ ] 4.4 Add security headers: strict CSP (`default-src 'self'`; `script-src 'self'`; `connect-src 'self'`; no third-party hosts), `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy`. Verify nothing in the app breaks (fonts are self-hosted). Test with a CSP report in the browser console (Req 41).
-  - [ ] 4.5 Build `worker/license-store.ts`: save/read license records by `license_key` (status, tier, timestamps, raw event log). No emails, no user input, ever (Req 30).
-  - [ ] 4.6 Build `worker/appsumo.ts` webhook (POST): respond to the validation `test` request, verify the signature, handle `purchase`, `activate`, `upgrade`, `downgrade` and `deactivate`, idempotent on repeated events, return the response AppSumo expects (Req 28–29, 33).
-  - [ ] 4.7 Build the OAuth redirect (GET): return 200 on AppSumo's validation request; on the real flow, exchange the code, fetch the license key, look it up, and redirect to `/#redeem` with the signed token delivered safely (no secrets in the URL hash history; use a one-time code exchanged by POST).
-  - [ ] 4.8 Build `worker/token.ts`: sign entitlement tokens with a Wrangler-secret Ed25519 private key; add `/api/license/status`. Document key generation and rotation in `README.md`.
-  - [ ] 4.9 Write tests for signature verification, replayed webhooks, unknown license keys, deactivate then reactivate, and tampered requests (`appsumo.test.ts`, `token.test.ts`).
-  - [ ] 4.10 Store secrets with `wrangler secret put` (AppSumo client id/secret, webhook secret, token private key). Confirm none are in git; add a secret-scan step to the checklist.
-  - [ ] 4.11 Create a minimal, access-protected support lookup by `license_key` (Req 32): a script or Cloudflare Access–protected route. No manual activate/refund actions.
-  - [ ] 4.12 In the AppSumo Partner Portal, register the webhook and OAuth redirect URLs and pass AppSumo's validation. Run the full test: purchase → activate → OAuth → Pro unlocks → deactivate → Pro removed.
-  - [ ] 4.13 Implement the blog redirect plan decided in PRD Open Question 2 (301 map or none). Confirm old URLs behave as agreed.
-  - [ ] 4.14 Attach `unpackingtheworld.com` as the custom domain, verify HTTPS, and run a final CSP and header check against the live domain.
+  - [x] 4.1 Read the current Cloudflare docs for Workers Static Assets, and the AppSumo Licensing guide (`docs.licensing.appsumo.com`): webhook events, signature verification, OAuth steps. Note any differences from this plan in `tasks/living_log.md`.
+  - [x] 4.2 Add `wrangler.jsonc` with `assets.directory = "./dist"`, a `main` Worker for `/api/*`, a current `compatibility_date`, and a KV namespace (or D1; decide per Open Question 9) binding. Add `wrangler` as an exact-pinned dev dependency and `npm run deploy` / `npm run dev:worker` scripts.
+  - [x] 4.3 Deploy a hello-world version to a `workers.dev` URL first; confirm the SPA loads and `/api/health` returns 200. (Live URL verified: `https://unpackingtheworld.sandiledlmn.workers.dev`.)
+  - [x] 4.4 Add security headers: strict CSP (`default-src 'self'`; `script-src 'self'`; `connect-src 'self'`; no third-party hosts), `X-Content-Type-Options`, `Referrer-Policy: no-referrer`, `Permissions-Policy`. Verify nothing in the app breaks (fonts are self-hosted). Test with a CSP report in the browser console (Req 41). (Headers verified live via curl; browser-console CSP check not possible in sandbox.)
+  - [x] 4.5 Build `worker/license-store.ts`: save/read license records by `license_key` (status, tier, timestamps, raw event log). No emails, no user input, ever (Req 30).
+  - [x] 4.6 Build `worker/appsumo.ts` webhook (POST): respond to the validation `test` request, verify the signature, handle `purchase`, `activate`, `upgrade`, `downgrade` and `deactivate`, idempotent on repeated events, return the response AppSumo expects (Req 28–29, 33).
+  - [x] 4.7 Build the OAuth redirect (GET): return 200 on AppSumo's validation request; on the real flow, exchange the code, fetch the license key, look it up, and redirect to `/#redeem` with the signed token delivered safely (no secrets in the URL hash history; use a one-time code exchanged by POST).
+  - [x] 4.8 Build `worker/token.ts`: sign entitlement tokens with a Wrangler-secret Ed25519 private key; add `/api/license/status`. Document key generation and rotation in `README.md`.
+  - [x] 4.9 Write tests for signature verification, replayed webhooks, unknown license keys, deactivate then reactivate, and tampered requests (`appsumo.test.ts`, `token.test.ts`).
+  - [ ] 4.10 Store secrets with `wrangler secret put` (AppSumo client id/secret, webhook secret, token private key). Confirm none are in git; add a secret-scan step to the checklist. (Token keypair set; AppSumo credentials declined by owner — blocked.)
+  - [x] 4.11 Create a minimal, access-protected support lookup by `license_key` (Req 32): a script or Cloudflare Access–protected route. No manual activate/refund actions.
+  - [ ] 4.12 In the AppSumo Partner Portal, register the webhook and OAuth redirect URLs and pass AppSumo's validation. Run the full test: purchase → activate → OAuth → Pro unlocks → deactivate → Pro removed. (Blocked: no credentials provided.)
+  - [x] 4.13 Implement the blog redirect plan decided in PRD Open Question 2 (301 map or none). Confirm old URLs behave as agreed. (All unknown extensionless paths 301 to `/`; verified live.)
+  - [ ] 4.14 Attach `unpackingtheworld.com` as the custom domain, verify HTTPS, and run a final CSP and header check against the live domain. (Blocked: Wrangler token has `zone (read)` only; domain/DNS control needed.)
 
 - [ ] 5.0 Developer-ops unpackers (PRD Req 19–21)
   - [ ] 5.1 Add `cronstrue` and a next-run library at exact versions. Build `cron.ts`: accept 5- and 6-field expressions, explain in English, list the next 5–10 run times in local time with a UTC toggle. Flag unusual cases (e.g. day-of-month and day-of-week both set). Test with at least 15 expressions.

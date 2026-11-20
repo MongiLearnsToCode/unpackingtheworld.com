@@ -53,7 +53,7 @@ interface State {
 type KeyValueStorage = Pick<Storage, "getItem" | "setItem" | "removeItem">;
 
 const STORAGE_KEY = "utw-entitlement";
-const DEFAULT_PUBLIC_KEY_HEX = "d7501844acfbad0bffd7c9739195972b0e3d0d6f88a3cbf91686b82171303d81";
+const DEFAULT_PUBLIC_KEY_HEX = "485990f31c12b7cfae51086281679af1c1c157f0a33b2d61f2e2169e82176343";
 
 function freshState(): State {
   return { tier: "free", token: null, lastOnlineCheck: 0, revoked: false };

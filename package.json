@@ -7,8 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "check": "svelte-check --tsconfig ./tsconfig.json",
-    "test": "node --experimental-strip-types --test src/lib/unpackers/*.test.ts src/lib/*.test.ts"
+    "check": "svelte-check --tsconfig ./tsconfig.json && tsc -p tsconfig.worker.json --noEmit",
+    "test": "node --experimental-strip-types --test src/lib/unpackers/*.test.ts src/lib/*.test.ts worker/*.test.ts",
+    "dev:worker": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "support:lookup": "node scripts/support-lookup.mjs"
   },
   "dependencies": {
     "@fontsource-variable/geist": "5.3.0",
@@ -18,9 +21,11 @@
     "svelte": "5.58.0"
   },
   "devDependencies": {
+    "@cloudflare/workers-types": "5.20261120.1",
     "@sveltejs/vite-plugin-svelte": "7.3.1",
     "svelte-check": "4.7.8",
     "typescript": "6.0.3",
-    "vite": "8.3.8"
+    "vite": "8.3.8",
+    "wrangler": "4.165.0"
   }
 }

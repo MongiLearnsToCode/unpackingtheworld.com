@@ -165,3 +165,87 @@ before launch; tracked as a launch blocker for task 4.8.
 
 **Prevention Note:** Never derive the embedded public key from a committed private key;
 generate it alongside the Wrangler secret and update the constant at deploy time.
+
+---
+
+## Decision — Cloudflare Workers Static Assets configuration (task 4.1)
+**Date:** 2026-11-20
+**Task:** 4.1 Documentation research
+**Severity:** Low
+
+**Problem:** PRD §7 specified `assets.directory` but did not mention SPA fallback or
+selective Worker routing.
+
+**Root Cause:** Workers Static Assets needs explicit SPA and routing settings; Pages
+used to infer these.
+
+**Resolution:** Current docs require, for a Vite SPA plus `/api/*` Worker:
+`assets.directory = "./dist"`, `assets.not_found_handling = "single-page-application"`,
+`assets.binding = "ASSETS"` and `assets.run_worker_first = ["/api/*"]`. Use
+`compatibility_date` set to the creation date and add `$schema` pointing at
+`node_modules/wrangler/config-schema.json`. Secrets via `wrangler secret put`; KV via
+`[[kv_namespaces]]`. Owners chose Workers KV and 301 redirects for old blog URLs.
+
+**Files Affected:** `wrangler.jsonc` (to be created).
+
+**Prevention Note:** Re-check the Static Assets routing docs before changing the
+Worker's routing or adding new API paths.
+
+---
+
+## Decision — AppSumo Licensing API v2 details (task 4.1)
+**Date:** 2026-11-20
+**Task:** 4.1 Documentation research
+**Severity:** Low
+
+**Problem:** PRD §4.4 summarised the integration; exact wire formats were needed.
+
+**Root Cause:** AppSumo's code samples are rendered client-side and were not available
+as plain text from the docs site.
+
+**Resolution:** Confirmed from docs and corroborating implementations:
+- Webhook security: HMAC-SHA256 of `X-Appsumo-Timestamp` concatenated with the **raw**
+  request body, keyed by the AppSumo API key, hex digest in `X-Appsumo-Signature`.
+  The signed concatenation separator is not stated explicitly in the prose; the
+  implementation will accept `timestamp + body` and `timestamp + "." + body` and log
+  the ambiguity. Verification is marked "optional" by AppSumo but required by our PRD.
+- Success response: `200` with `{ "event": "<event>", "success": true }`. Test events
+  (`test: true`) must also get this response but must not change state.
+- Events: `purchase`, `activate`, `upgrade`, `downgrade`, `deactivate`, plus
+  `migrate` for add-ons (not in the PRD list; will be logged but not change tier).
+- OAuth validation: AppSumo sends a bare `GET` with no payload; return `200`.
+- Live OAuth arrives as `?code=...` (single use). Exchange with
+  `POST https://appsumo.com/openid/token/` (`client_id`, `client_secret`, `code`,
+  `redirect_uri`, `grant_type=authorization_code`), then
+  `GET https://appsumo.com/openid/license_key/?access_token=...`.
+- Unknown license keys must be handled without granting Pro.
+
+**Files Affected:** `worker/appsumo.ts`, `worker/index.ts` (to be created).
+
+**Prevention Note:** Verify the signature separator and webhook success response during
+the live AppSumo validation in task 4.12.
+
+---
+
+## Issue #6 — Static assets bypassed the Worker, dropping CSP and redirects
+**Date:** 2026-11-20
+**Task:** 4.3/4.4 Deploy and verify headers
+**Severity:** High
+
+**Problem:** On the first deploy, `/` had no CSP or security headers and old blog URLs
+returned 200 instead of 301, while `/api/health` was correct.
+
+**Root Cause:** `run_worker_first: ["/api/*"]` only invoked the Worker for API paths;
+Cloudflare served static assets and the SPA fallback directly, bypassing all Worker
+header and redirect logic.
+
+**Resolution:** Changed to `run_worker_first: ["/*", "!/assets/*"]` (the documented SPA
+shell pattern) so the Worker runs for every non-asset path, adds headers and handles
+blog redirects, then fetches the page via the `ASSETS` binding. Redeployed and verified:
+CSP + all security headers on `/`, 301 on old blog paths, assets still served directly.
+An initial 200 on the old URL was only CDN cache; a cache-busted request returned 301.
+
+**Files Affected:** `wrangler.jsonc`.
+
+**Prevention Note:** After every deploy, verify headers and redirects on both `/api/*`
+and a static page, using a cache-busting query where Cloudflare may cache a 301.

@@ -43,6 +43,43 @@ format, `unpack()` returns flags, fields and JSON sections), then add it to the 
 - The daily online re-check calls only `/api/license/status` with the token; it never
   sends pasted input. Offline failures keep Pro for a 7-day grace period.
 
+## Deployment (Cloudflare Workers + Static Assets)
+
+- `npm run deploy` builds `dist/` and deploys the Worker. Config is in `wrangler.jsonc`.
+- The Worker runs first for every non-asset path so security headers, CSP and old-blog
+  301 redirects apply to the SPA too. Assets under `/assets/*` are served directly.
+- Live `workers.dev` URL: `https://unpackingtheworld.sandiledlmn.workers.dev`.
+- AppSumo Partner Portal URLs to register:
+  - Webhook: `https://unpackingtheworld.sandiledlmn.workers.dev/api/appsumo/webhook`
+  - OAuth redirect: `https://unpackingtheworld.sandiledlmn.workers.dev/api/appsumo/oauth`
+
+### Secrets
+
+Set with `wrangler secret put <NAME>` (never commit them):
+
+- `TOKEN_PRIVATE_KEY` — PKCS#8 PEM Ed25519 private key used to sign entitlement tokens.
+- `TOKEN_PUBLIC_KEY` — 64 hex chars, the public half of that key. It **must** match
+  `DEFAULT_PUBLIC_KEY_HEX` in `src/lib/entitlements.ts`, which is embedded in the client.
+- `APPSUMO_API_KEY` — shared key for webhook HMAC verification.
+- `APPSUMO_CLIENT_ID`, `APPSUMO_CLIENT_SECRET` — OAuth credentials.
+- `APPSUMO_REDIRECT_URI` — must exactly match the URL registered with AppSumo.
+
+Key rotation: generate a new Ed25519 pair, update `TOKEN_PRIVATE_KEY`, `TOKEN_PUBLIC_KEY`
+and `DEFAULT_PUBLIC_KEY_HEX` together, then redeploy. Existing offline tokens stop
+verifying until users redeem again.
+
+### Pre-deploy checklist
+
+- `npm test`, `npm run check`, `npm run build` all pass.
+- Secret scan: `git grep -nE -- 'BEGIN (RSA |EC |OPENSSH |)?PRIVATE KEY|APPSUMO_CLIENT_SECRET|APPSUMO_API_KEY' -- . ':(exclude)README.md' ':(exclude)tasks/*' ':(exclude)**/*.test.ts'` returns nothing (test fixtures use fake PEM markers).
+- No user-input fetch, beacon or analytics call exists in `src/` (privacy promise).
+
+### Support lookup
+
+`npm run support:lookup -- <license_key>` reads the license record from KV. It requires
+an authenticated Wrangler session, so it is access-protected by Cloudflare credentials.
+There is no manual activate, upgrade or refund path.
+
 ## Notes
 
 - UI SDK is pre-1.0. Upgrade deliberately (`npm install --save-exact @ui-sdk/svelte@<ver> @ui-sdk/core@<ver>`)
