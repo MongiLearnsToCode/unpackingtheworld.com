@@ -52,7 +52,7 @@
 
 - [ ] 1.0 Baseline, PEM and safety net (PRD Req 1–12, 16, 36–40)
   - [x] 1.1 Unzip `unpackingtheworld.zip`, run `npm install`, `npm test`, `npm run check`, `npm run build`. Record the results in `tasks/living_log.md`. If you have the later zip that already contains PEM, use it and skip 1.3–1.4.
-  - [ ] 1.2 Initialise git (if needed), commit the baseline, and create `tasks/living_log.md` using the format in the dev prompt.
+  - [x] 1.2 Initialise git (if needed), commit the baseline, and create `tasks/living_log.md` using the format in the dev prompt.
   - [x] 1.3 Build `pem.ts`: strip `NAME=` prefixes, accept one-line keys and `\n` escapes, parse the DER header to report algorithm, key size and curve for RSA, EC and Ed25519 in PKCS#1, PKCS#8 and public-key forms. Add the red "private key" flag and the "RSA under 2048 bits" warning. Never include key bytes in the output. Report damaged keys as an error flag, not an exception.
   - [x] 1.4 Write `pem.test.ts` with keys generated at test time (Node `crypto.generateKeyPairSync`) for RSA 1024/2048, EC and Ed25519, plus damaged, truncated and `.env`-style inputs. No real keys.
   - [x] 1.5 Register PEM in `index.ts` and add a PEM sample to `samples.ts`.

@@ -69,7 +69,8 @@ email address.
 **Resolution:** Owner supplied name `Sandile Mongi Dlamini` and email
 `sandiledlmn@gmail.com`. Identity is passed per-command via `GIT_AUTHOR_*` /
 `GIT_COMMITTER_*` environment variables so global git config is not modified.
-Owner also authorised pushing to `git@github.com:MongiLearnsToCode/unpackingtheworld.com.git`.
+Owner also authorised pushing to `git@github.com:MongiLearnsToCode/unpackingtheworld.com.git`;
+the remote was empty, the root commit was created as `016d007` and pushed to `master`.
 
 **Files Affected:** `.git/` only.
 
