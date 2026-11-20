@@ -344,3 +344,29 @@ the other samples and Pro actions remain in the command palette, so no feature w
 
 **Prevention Note:** Scope landing styles under `.landing` or use prefixed class names so
 they cannot collide with tool classes.
+
+---
+
+## Issue #9 — Bottom rows overlapped the pane border and footer
+**Date:** 2026-11-20
+**Task:** Tool bottom layout
+**Severity:** Medium
+
+**Problem:** The "Try:" row and the locked-feature line at the bottom of the input pane
+were clipped against the pane border and collided with the page footer.
+
+**Root Cause:** Two compounding layout faults: the bottom strips were shrinkable flex
+children, so they compressed under tight height; and the resizable container used
+`height: 100%` of `main` on top of the Pro notice above it, overflowing `main` by the
+notice's height.
+
+**Resolution:** Gave `.samples`, `.dropzone` and `.history-strip` `flex: none` with
+consistent 8px/14px padding and line-height, set `textarea` to `flex: 1 1 0; min-height: 0`
+so it absorbs the shrink, changed `.main` to a flex column and the split to
+`flex: 1; min-height: 0`. Verified in a real browser: bottom text now sits inside the
+pane with clear space from the border, and the panes end above the footer.
+
+**Files Affected:** `src/app.css`.
+
+**Prevention Note:** When stacking fixed strips inside a full-height flex pane, mark the
+strips non-shrinking and let only the content area flex.
