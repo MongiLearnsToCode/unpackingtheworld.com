@@ -317,3 +317,30 @@ on the custom domain; our CSP blocks it, which is intentional for the no-analyti
 
 **Prevention Note:** Keep `script-src` strict and re-check console diagnostics after any
 UI SDK upgrade; prefer hashed styles if the SDK ever supports them.
+
+---
+
+## Issue #8 — Landing `.split` class collapsed the tool's split panes
+**Date:** 2026-11-20
+**Task:** Landing page / UI regression
+**Severity:** High
+
+**Problem:** After adding the landing page, the tool's input/result panes occupied only
+the top ~280 px with a large empty gap below, instead of filling the viewport as in the
+original prototype.
+
+**Root Cause:** The landing stylesheet defined `.split { display: grid; grid-template-columns:
+1fr 1fr; gap: 56px; align-items: start; }`, and the Resizable wrapper also passes
+`class="split"`. Those rules applied to the tool container; `align-items: start` stopped
+the panels stretching vertically and `gap: 56px` widened the split.
+
+**Resolution:** Renamed the landing class to `.landing-split` in both the component and
+`app.css` (including the responsive rule), leaving the tool's `[data-slot="resizable"].split`
+rules intact. Verified in a real browser: panes now fill the viewport again. Also reduced
+input-pane chrome to the original three sample chips and one compact locked-feature line;
+the other samples and Pro actions remain in the command palette, so no feature was removed.
+
+**Files Affected:** `src/lib/components/LandingPage.svelte`, `src/App.svelte`, `src/app.css`.
+
+**Prevention Note:** Scope landing styles under `.landing` or use prefixed class names so
+they cannot collide with tool classes.

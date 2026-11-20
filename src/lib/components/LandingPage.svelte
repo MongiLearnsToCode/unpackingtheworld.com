@@ -66,7 +66,7 @@
       <div><strong>7 days</strong><span>offline Pro grace period</span></div>
     </section>
 
-    <section class="section split" id="privacy-first">
+    <section class="section landing-split" id="privacy-first">
       <div>
         <h2>Privacy is the feature, not a settings page.</h2>
         <p class="muted">A production token or private key is the last thing you should paste into an unfamiliar website. Here, decoding happens in the tab you are looking at. There is no submit button because there is nowhere to submit to.</p>
@@ -97,7 +97,7 @@
       </div>
     </section>
 
-    <section class="section split reverse" id="pricing">
+    <section class="section landing-split landing-reverse" id="pricing">
       <div>
         <h2>Free for the everyday decodes. Pro for the deep ones.</h2>
         <p class="muted">The free tier covers the formats you reach for most. Pro adds the security-focused and bulk tools, plus offline install. One AppSumo lifetime licence unlocks them all in your browser.</p>

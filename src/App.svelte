@@ -248,7 +248,6 @@
     <div class="spacer-flex"></div>
     <CommandPalette {commands} bind:open={paletteOpen} />
     {#if access.pwa && installEvent}<button class="btn" onclick={installApp}>Install</button>{/if}
-    <a class="btn" href="#redeem">Pro</a>
     <button class="icon-btn" onclick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
   </header>
 
@@ -288,17 +287,9 @@
               <button class="chip" onclick={() => setInput(sampleJwt())}>JWT</button>
               <button class="chip" onclick={() => setInput(sampleBase64())}>Base64</button>
               <button class="chip" onclick={() => setInput(sampleUrl())}>URL</button>
-              <button class="chip" onclick={() => setInput(samplePem())}>PEM</button>
-              <button class="chip" onclick={() => setInput(sampleHtmlEntities())}>Entities</button>
-              <button class="chip" onclick={() => setInput(sampleTimestamp())}>Time</button>
-              <button class="chip" onclick={() => setInput(sampleUuid())}>UUID</button>
             </div>
             {#if access.archive}
               <DropZone onFile={loadArchive} />
-            {:else}
-              <div class="dropzone">
-                <span class="muted small">Archive peeker is Pro · <a class="link" href="#redeem">Unlock Pro</a></span>
-              </div>
             {/if}
             {#if access.history}
               <div class="history-strip">
@@ -314,7 +305,13 @@
                 {/if}
               </div>
             {:else}
-              <div class="history-strip muted small">Local history is Pro · <a class="link" href="#redeem">Unlock Pro</a></div>
+              <div class="history-strip muted small">
+                {#if access.archive}
+                  Local history is Pro · <a class="link" href="#redeem">Unlock Pro</a>
+                {:else}
+                  Archive peeker and local history are Pro · <a class="link" href="#redeem">Unlock Pro</a>
+                {/if}
+              </div>
             {/if}
           </section>
         {/snippet}
