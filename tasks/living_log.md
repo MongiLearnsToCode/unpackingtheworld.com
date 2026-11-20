@@ -76,3 +76,68 @@ the remote was empty, the root commit was created as `016d007` and pushed to `ma
 
 **Prevention Note:** Supply commit identity explicitly per command rather than changing
 global git config in a shared environment.
+
+---
+
+## Issue #3 — X.509 distinguished names are DER SETs, not SEQUENCEs
+**Date:** 2026-11-20
+**Task:** 2.3 X.509 certificate parser
+**Severity:** Medium
+
+**Problem:** Every generated-certificate test failed with `Expected a DER SEQUENCE`
+inside `distinguishedName()`.
+
+**Root Cause:** In ASN.1, `RelativeDistinguishedName ::= SET OF AttributeTypeAndValue`
+(tag `0x31`). The parser reused the SEQUENCE-only helper for RDNs.
+
+**Resolution:** Added a `setOf()` reader in `x509.ts` and used it for RDN decoding.
+The shared `der.ts` reader is otherwise unchanged. All certificate tests pass,
+including subject/issuer, SAN, validity, self-signed, SHA-1, weak RSA and CA-issued cases.
+
+**Files Affected:** `src/lib/unpackers/x509.ts`, `src/lib/unpackers/der.ts`, `src/lib/unpackers/pem.ts`.
+
+**Prevention Note:** When writing DER readers, check the ASN.1 tag of every constructed
+type; SET and SEQUENCE are encoded differently despite both holding TLVs.
+
+---
+
+## Issue #4 — Base64 scored plain English as a weak match
+**Date:** 2026-11-20
+**Task:** 2.8 Detection table
+**Severity:** Low
+
+**Problem:** `hello world` was detected as Base64 (score 0.2) because `b64ToBytes()`
+strips whitespace and the remaining letters happen to be valid base64 characters.
+
+**Root Cause:** The binary-output branch of `base64.score()` returned a fixed 0.2
+regardless of whether the input carried any base64 markers.
+
+**Resolution:** Binary decodes now score 0.45 only when the input contains `+/=_` or a
+digit; otherwise they score 0. Real binary base64 such as `AAECA/7+/g==` still detects,
+while plain words no longer do. 32-case detection table passes.
+
+**Files Affected:** `src/lib/unpackers/base64.ts`, `src/lib/unpackers/detection.test.ts`.
+
+**Prevention Note:** Weak heuristic scores still surface as detections; keep markers as a
+prerequisite in every `score()` branch.
+
+---
+
+## Decision — certificates generated with OpenSSL at test time
+**Date:** 2026-11-20
+**Task:** 2.4 X.509 tests
+**Severity:** Low
+
+**Problem:** No exactly-pinned X.509 generator dependency was present, and committing
+fixture certificates would violate the "never commit real keys or certs" rule.
+
+**Root Cause:** Choice between adding a dev dependency and using the available system tool.
+
+**Resolution:** Tests generate RSA 1024/2048, EC P-256, Ed25519, SHA-1 and CA-issued
+certificates with the system `openssl` CLI into a temp directory, deleting it afterwards.
+No certificate material is committed. OpenSSL 3.0.13 is required on the test machine.
+
+**Files Affected:** `src/lib/unpackers/x509.test.ts`.
+
+**Prevention Note:** If CI lacks OpenSSL, add an exactly-pinned JS certificate generator
+instead of committing fixtures.

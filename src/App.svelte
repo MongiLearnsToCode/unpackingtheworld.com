@@ -4,7 +4,7 @@
   import ResizableSplit from "./lib/components/ResizableSplit.svelte";
   import ResultTree from "./lib/components/ResultTree.svelte";
   import { noMatchMessage } from "./lib/messages.ts";
-  import { sampleBase64, sampleJwt, samplePem, sampleUrl } from "./lib/samples.ts";
+  import { sampleBase64, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUuid } from "./lib/samples.ts";
   import { detect, unpack, unpackers } from "./lib/unpackers/index.ts";
   import { b64ToBytes, utf8 } from "./lib/unpackers/util.ts";
 
@@ -24,6 +24,7 @@
   let theme = $state<"dark" | "light">(isBrowser && document.documentElement.dataset.theme === "light" ? "light" : "dark");
   let toast = $state("");
   let paletteOpen = $state(false);
+  let chainDepth = $state(0);
   let textarea: HTMLTextAreaElement | undefined = $state();
 
   $effect(() => {
@@ -37,13 +38,14 @@
   const detections = $derived(detect(input));
   const detectedIds = $derived(new Set(detections.map((d) => d.unpacker.id)));
   const active = $derived(override ?? detections[0]?.unpacker.id ?? "");
-  const result = $derived(active && input.trim() ? unpack(active, input) : null);
+  const result = $derived(active && input.trim() ? unpack(active, input, chainDepth) : null);
   const activeLabel = $derived(unpackers.find((u) => u.id === active)?.label ?? "");
   const noMatch = $derived(noMatchMessage(override ? activeLabel : null));
 
   function setInput(v: string) {
     input = v;
     override = null;
+    chainDepth = 0;
     textarea?.focus();
   }
 
@@ -83,6 +85,9 @@
     { value: "sample-b64", label: "Load sample Base64", group: "Samples", run: () => setInput(sampleBase64()) },
     { value: "sample-url", label: "Load sample URL", group: "Samples", run: () => setInput(sampleUrl()) },
     { value: "sample-pem", label: "Load sample PEM key", group: "Samples", run: () => setInput(samplePem()) },
+    { value: "sample-entities", label: "Load sample HTML entities", group: "Samples", run: () => setInput(sampleHtmlEntities()) },
+    { value: "sample-timestamp", label: "Load sample Unix timestamp", group: "Samples", run: () => setInput(sampleTimestamp()) },
+    { value: "sample-uuid", label: "Load sample UUID", group: "Samples", run: () => setInput(sampleUuid()) },
     ...unpackers.map((u) => ({ value: `as-${u.id}`, label: `Unpack as ${u.label}`, group: "Force format", run: () => (override = u.id) })),
     { value: "auto", label: "Auto-detect format", group: "Force format", run: () => (override = null) },
     { value: "share", label: "Copy share link", group: "Actions", run: shareLink },
@@ -139,6 +144,9 @@
               <button class="chip" onclick={() => setInput(sampleBase64())}>Base64</button>
               <button class="chip" onclick={() => setInput(sampleUrl())}>URL</button>
               <button class="chip" onclick={() => setInput(samplePem())}>PEM</button>
+              <button class="chip" onclick={() => setInput(sampleHtmlEntities())}>Entities</button>
+              <button class="chip" onclick={() => setInput(sampleTimestamp())}>Time</button>
+              <button class="chip" onclick={() => setInput(sampleUuid())}>UUID</button>
             </div>
           </section>
         {/snippet}
@@ -209,6 +217,22 @@
                       <button class="btn small" onclick={() => copy(result.text ?? "", "Copied")}>Copy</button>
                     </div>
                     <pre class="text-out">{result.text}</pre>
+                  </div>
+                {/if}
+
+                {#if result.next && result.next.length}
+                  <div class="chain">
+                    <span class="muted small">Unpack result:</span>
+                    {#each result.next as step (step.input + step.id)}
+                      <button
+                        class="chip"
+                        onclick={() => {
+                          input = step.input;
+                          override = step.id;
+                          chainDepth += 1;
+                        }}
+                      >{step.label}</button>
+                    {/each}
                   </div>
                 {/if}
               {/if}

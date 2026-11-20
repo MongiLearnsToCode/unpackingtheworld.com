@@ -90,6 +90,7 @@ kbd { font: 12px var(--font-mono); padding: 1px 6px; border: 1px solid var(--bor
 .link { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; }
 .detected-chip { font: 12px var(--font-mono); color: var(--good); border: 1px solid var(--good); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .share-note { white-space: nowrap; }
+.chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
 
 [data-slot="resizable"].split { height: 100%; }
 [data-slot="resizable-panel"] { min-width: 0; min-height: 0; }
@@ -109,7 +110,7 @@ textarea {
   padding: 14px; font: 13px/1.6 var(--font-mono); outline: none; word-break: break-all;
 }
 textarea::placeholder { color: var(--muted-text); }
-.samples { display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border); }
+.samples { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 8px 12px; border-top: 1px solid var(--border); }
 
 .result-body { flex: 1; overflow: auto; padding: 14px; }
 .empty { display: grid; gap: 4px; place-content: center; text-align: center; height: 100%; min-height: 160px; }

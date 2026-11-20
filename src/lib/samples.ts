@@ -28,6 +28,18 @@ export function sampleUrl(): string {
   return "https://example.com/search%20results?q=unpacking+the+world&tags=a&tags=b&utm_source=newsletter#section-2";
 }
 
+export function sampleHtmlEntities(): string {
+  return "The &ldquo;quick brown fox&rdquo; &amp; the lazy dog &#x1F600; &mdash; decoded instantly.";
+}
+
+export function sampleTimestamp(): string {
+  return String(Math.floor(Date.now() / 1000));
+}
+
+export function sampleUuid(): string {
+  return "f47ac10b-58cc-4372-a567-0e02b2c3d479";
+}
+
 export function samplePem(): string {
   return [
     "-----BEGIN PUBLIC KEY-----",

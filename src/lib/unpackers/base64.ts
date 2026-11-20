@@ -10,7 +10,9 @@ export const base64: Unpacker = {
     const bytes = b64ToBytes(s);
     if (!bytes) return 0;
     const text = utf8(bytes);
-    if (text === null || !looksLikeText(text)) return 0.2;
+    if (text === null || !looksLikeText(text)) {
+      return /[+/=_-]/.test(s) || /\d/.test(s) ? 0.45 : 0;
+    }
     // Plain words like "helloworld" are valid base64 chars but unlikely to be meant as such
     const hasMarkers = /[+/=_-]/.test(s) || /[A-Z]/.test(s) && /[a-z]/.test(s) && /\d/.test(s);
     return hasMarkers ? 0.7 : 0.35;

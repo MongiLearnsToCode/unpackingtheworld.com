@@ -64,16 +64,16 @@
   - [ ] 1.11 Manual review in a real browser (Chrome plus Firefox or Safari, and a phone-width window): JWT chip, tree indent and chevrons, segmented control, Ctrl/⌘+K palette, resize drag, light/dark, stacking on narrow screens. Fix visual problems using the `frontend-design` skill; log findings.
   - [x] 1.12 Add a short keyboard and screen-reader pass: tab order, visible focus, ARIA roles, contrast (WCAG AA) (Req 35).
 
-- [ ] 2.0 Core text unpackers (PRD Req 14, 17, 18, 22, 23)
-  - [ ] 2.1 Extend `types.ts` with an optional `next?: { label: string; input: string }[]` on `Unpacked` for chainable results. Keep it backwards-compatible.
-  - [ ] 2.2 Build `nested.ts` and a "Unpack result" button in the results pane: when a decoded Base64/URL result looks like JSON, a JWT, or another known format, offer a one-click chain, with a depth limit of 5 to avoid loops (Req 14). Test with Base64→JWT and URL→Base64.
-  - [ ] 2.3 Build `x509.ts`: parse a CERTIFICATE PEM (use a small, exactly-pinned ASN.1/X.509 library or a minimal DER reader) to show subject, issuer, validity dates with expired/valid status, SAN list, key type and size, signature algorithm. Flag expired, not-yet-valid, self-signed and weak (SHA-1, RSA < 2048) certificates. Do not print the raw certificate bytes.
-  - [ ] 2.4 Write `x509.test.ts` using certificates generated at test time (for example with Node or an exactly-pinned dev dependency).
-  - [ ] 2.5 Build `htmlEntities.ts`: decode named, decimal and hex entities; score high only when entities are present; show an "encoded form" preview. Test `&amp;`, `&#39;`, `&#x1F600;`, malformed entities.
-  - [ ] 2.6 Build `timestamp.ts`: detect Unix seconds, ms, µs, ns and ISO 8601 by magnitude and shape; show UTC, local time, relative time. Test boundary values and ambiguous inputs (show alternatives, best guess first).
-  - [ ] 2.7 Build `uuid.ts`: validate format, show version and variant; for v1 and v7 show the embedded timestamp. Flag the nil and max UUIDs.
-  - [ ] 2.8 Register all four in `index.ts`, add samples to `samples.ts` and to the palette, and tune `score()` values so a plain 10-digit number, a UUID, a JWT and a Base64 string never confuse each other. Add a detection test table with at least 30 sample inputs.
-  - [ ] 2.9 Confirm every new result shows copy buttons and meaningful flags; run test, check, build.
+- [x] 2.0 Core text unpackers (PRD Req 14, 17, 18, 22, 23)
+  - [x] 2.1 Extend `types.ts` with an optional `next?: { label: string; input: string }[]` on `Unpacked` for chainable results. Keep it backwards-compatible.
+  - [x] 2.2 Build `nested.ts` and a "Unpack result" button in the results pane: when a decoded Base64/URL result looks like JSON, a JWT, or another known format, offer a one-click chain, with a depth limit of 5 to avoid loops (Req 14). Test with Base64→JWT and URL→Base64.
+  - [x] 2.3 Build `x509.ts`: parse a CERTIFICATE PEM (use a small, exactly-pinned ASN.1/X.509 library or a minimal DER reader) to show subject, issuer, validity dates with expired/valid status, SAN list, key type and size, signature algorithm. Flag expired, not-yet-valid, self-signed and weak (SHA-1, RSA < 2048) certificates. Do not print the raw certificate bytes.
+  - [x] 2.4 Write `x509.test.ts` using certificates generated at test time (for example with Node or an exactly-pinned dev dependency).
+  - [x] 2.5 Build `htmlEntities.ts`: decode named, decimal and hex entities; score high only when entities are present; show an "encoded form" preview. Test `&amp;`, `&#39;`, `&#x1F600;`, malformed entities.
+  - [x] 2.6 Build `timestamp.ts`: detect Unix seconds, ms, µs, ns and ISO 8601 by magnitude and shape; show UTC, local time, relative time. Test boundary values and ambiguous inputs (show alternatives, best guess first).
+  - [x] 2.7 Build `uuid.ts`: validate format, show version and variant; for v1 and v7 show the embedded timestamp. Flag the nil and max UUIDs.
+  - [x] 2.8 Register all four in `index.ts`, add samples to `samples.ts` and to the palette, and tune `score()` values so a plain 10-digit number, a UUID, a JWT and a Base64 string never confuse each other. Add a detection test table with at least 30 sample inputs.
+  - [x] 2.9 Confirm every new result shows copy buttons and meaningful flags; run test, check, build.
 
 - [ ] 3.0 Entitlements and free/Pro gating (PRD Req 25–27, 31, 34)
   - [ ] 3.1 Confirm the free/Pro split with the owner (PRD Open Question 1) and record the final list at the top of `entitlements.ts`.

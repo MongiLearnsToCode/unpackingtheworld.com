@@ -21,6 +21,8 @@ export interface Unpacked {
   sections: { title: string; json: unknown }[];
   /** Plain-text output when there's no structure */
   text?: string;
+  /** One-click chains to another unpacker, offered by the results pane */
+  next?: { label: string; input: string; id: string }[];
 }
 
 export interface Unpacker {

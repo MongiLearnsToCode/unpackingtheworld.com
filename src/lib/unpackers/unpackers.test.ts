@@ -76,3 +76,22 @@ test("an explicit override is named in the no-match message", () => {
   assert.equal(message.headline, "Can’t unpack this as JWT.");
   assert.match(message.hint, /different format/);
 });
+
+test("base64 decoding offers a one-click chain to the JWT inside", () => {
+  const inner = token({ sub: "chain" });
+  const encoded = Buffer.from(inner).toString("base64");
+  const result = unpack("base64", encoded)!;
+  assert.ok(result.next?.some((n) => n.id === "jwt" && n.input === inner));
+});
+
+test("URL decoding offers a one-click chain to base64 inside a query value", () => {
+  const inner = Buffer.from("hello there world").toString("base64");
+  const result = unpack("url", `https://example.com/?x=${encodeURIComponent(inner)}`)!;
+  assert.ok(result.next?.some((n) => n.id === "base64" && n.input === inner));
+});
+
+test("chains stop at the depth limit", () => {
+  const inner = token({ sub: "chain" });
+  const encoded = Buffer.from(inner).toString("base64");
+  assert.deepEqual(unpack("base64", encoded, 5)?.next, []);
+});
