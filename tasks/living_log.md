@@ -291,3 +291,29 @@ names are kept as text. Result recorded in `archive.test.ts` output and task sta
 **Files Affected:** `src/lib/archive/archive.test.ts`, `src/lib/components/ArchiveTree.svelte`.
 
 **Prevention Note:** Re-run the large-listing test after changing the tree wrapper.
+
+---
+
+## Issue #7 — Strict style-src blocked UI SDK split-pane sizing
+**Date:** 2026-11-20
+**Task:** 4.4 / landing review
+**Severity:** Medium
+
+**Problem:** Live browser console reported `Applying inline style violates ... style-src 'self'`
+for four elements. The UI SDK's Resizable, ResizablePanel and ResizableHandle set inline
+`style` attributes (flex sizes and CSS variables), so the split layout could not size
+itself under a strict style CSP.
+
+**Root Cause:** `style-src 'self'` forbids inline style attributes, including ones set by
+JavaScript. The UI SDK has no nonce/hash support for these dynamic values.
+
+**Resolution:** Relaxed only `style-src` to `'self' 'unsafe-inline'`. `script-src 'self'`,
+`connect-src 'self'` and all other directives remain strict; no user input is ever
+rendered as HTML, so the relaxation is limited to presentation. Logged here rather than
+silently changing the security posture. Cloudflare also injects its own Insights beacon
+on the custom domain; our CSP blocks it, which is intentional for the no-analytics promise.
+
+**Files Affected:** `worker/index.ts`.
+
+**Prevention Note:** Keep `script-src` strict and re-check console diagnostics after any
+UI SDK upgrade; prefer hashed styles if the SDK ever supports them.

@@ -6,7 +6,7 @@ const SECURITY_HEADERS: Record<string, string> = {
     "default-src 'self'",
     "base-uri 'self'",
     "script-src 'self'",
-    "style-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
     "font-src 'self'",
     "img-src 'self' data:",
     "connect-src 'self'",
