@@ -1,0 +1,20 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Unpacking the World · decode tokens, encodings and more</title>
+    <meta name="description" content="Paste a JWT, Base64 string or URL and see what's inside. Runs entirely in your browser. Nothing is uploaded." />
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 100 100%27><text y=%27.9em%27 font-size=%2790%27>📦</text></svg>" />
+    <script>
+      try {
+        var t = localStorage.getItem("utw-theme");
+        if (t === "light" || t === "dark") document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
+  </head>
+  <body>
+    <div id="app"></div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
