@@ -5,6 +5,7 @@
   import CommandPalette, { type Cmd } from "./lib/components/CommandPalette.svelte";
   import DropZone from "./lib/components/DropZone.svelte";
   import FormatSwitcher from "./lib/components/FormatSwitcher.svelte";
+  import LandingPage from "./lib/components/LandingPage.svelte";
   import LegalPage from "./lib/components/LegalPage.svelte";
   import LockedFeature from "./lib/components/LockedFeature.svelte";
   import ProNotice from "./lib/components/ProNotice.svelte";
@@ -24,6 +25,10 @@
   interface InstallPromptEvent extends Event {
     prompt(): Promise<void>;
   }
+  const toolHashes = ["#redeem", "#privacy", "#terms", "#refunds", "#faq"];
+  const landingMode = isBrowser && location.pathname === "/"
+    && !location.hash.startsWith("#d=")
+    && !toolHashes.includes(location.hash);
   let installEvent = $state<InstallPromptEvent | null>(null);
 
   async function installApp() {
@@ -233,6 +238,9 @@
   }
 </script>
 
+{#if landingMode}
+  <LandingPage />
+{:else}
 <div class="app" id="top">
   <header class="topbar">
     <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpackingtheworld</a>
@@ -439,3 +447,4 @@
 
   {#if toast}<div class="toast" role="status">{toast}</div>{/if}
 </div>
+{/if}

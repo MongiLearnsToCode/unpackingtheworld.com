@@ -43,15 +43,21 @@ format, `unpack()` returns flags, fields and JSON sections), then add it to the 
 - The daily online re-check calls only `/api/license/status` with the token; it never
   sends pasted input. Offline failures keep Pro for a 7-day grace period.
 
+## Pages
+
+- `/` — landing page (editorial dark theme, product preview built from the real unpacker).
+- `/app` — the decoder tool. Old `#d=` share links and `#redeem` / legal hashes at `/` still open the tool.
+
 ## Deployment (Cloudflare Workers + Static Assets)
 
 - `npm run deploy` builds `dist/` and deploys the Worker. Config is in `wrangler.jsonc`.
 - The Worker runs first for every non-asset path so security headers, CSP and old-blog
   301 redirects apply to the SPA too. Assets under `/assets/*` are served directly.
 - Live `workers.dev` URL: `https://unpackingtheworld.sandiledlmn.workers.dev`.
-- AppSumo Partner Portal URLs to register:
-  - Webhook: `https://unpackingtheworld.sandiledlmn.workers.dev/api/appsumo/webhook`
-  - OAuth redirect: `https://unpackingtheworld.sandiledlmn.workers.dev/api/appsumo/oauth`
+- Custom domain: `https://unpackingtheworld.com` (attached as a Workers Custom Domain; HTTPS verified).
+- AppSumo Partner Portal URLs to register (use the production domain):
+  - Webhook: `https://unpackingtheworld.com/api/appsumo/webhook`
+  - OAuth redirect: `https://unpackingtheworld.com/api/appsumo/oauth`
 
 ### Secrets
 

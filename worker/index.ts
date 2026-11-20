@@ -31,7 +31,7 @@ function json(value: unknown, status = 200): Response {
 }
 
 function isOldBlogPath(path: string): boolean {
-  if (path === "/" || path.startsWith("/assets/")) return false;
+  if (path === "/" || path === "/app" || path === "/app/" || path.startsWith("/assets/")) return false;
   return !/\.[a-zA-Z0-9]+$/.test(path);
 }
 
