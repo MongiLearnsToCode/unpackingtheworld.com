@@ -33,6 +33,7 @@ const components: [string, string, Record<string, unknown>][] = [
     value: "jwt",
     options: [{ id: "jwt", label: "JWT" }],
     detectedIds: new Set(["jwt"]),
+    lockedIds: new Set(["x509"]),
     onManual: () => {},
   }],
   ["ResizableSplit", "/src/lib/components/ResizableSplit.svelte", { narrow: false, inputPane: emptySnippet, resultsPane: emptySnippet }],

@@ -75,17 +75,17 @@
   - [x] 2.8 Register all four in `index.ts`, add samples to `samples.ts` and to the palette, and tune `score()` values so a plain 10-digit number, a UUID, a JWT and a Base64 string never confuse each other. Add a detection test table with at least 30 sample inputs.
   - [x] 2.9 Confirm every new result shows copy buttons and meaningful flags; run test, check, build.
 
-- [ ] 3.0 Entitlements and free/Pro gating (PRD Req 25–27, 31, 34)
-  - [ ] 3.1 Confirm the free/Pro split with the owner (PRD Open Question 1) and record the final list at the top of `entitlements.ts`.
-  - [ ] 3.2 Build `entitlements.ts` with `isUnlocked(featureId)`, a feature-to-tier map, and token loading/saving in `localStorage` wrapped in try/catch (storage may be blocked).
-  - [ ] 3.3 Implement signed-token verification in the browser with Web Crypto Ed25519 (or a pinned small library if browser support is a problem), using an embedded public key. Token carries tier, license-id hash and expiry. Reject expired or tampered tokens.
-  - [ ] 3.4 Write `entitlements.test.ts`: valid token, expired token, tampered payload, wrong key, missing storage, offline grace period (Open Question 4 default: 7 days).
-  - [ ] 3.5 Add a once-a-day online status re-check hook (calls only the site's own `/api/license/status` endpoint); on "deactivated", remove Pro. Offline failures must not remove Pro before the grace period ends.
-  - [ ] 3.6 Build `LockedFeature.svelte`: show name, one-line description and "Unlock Pro" for locked unpackers; never hide them (Req 27). Wire it into the format switcher and palette.
-  - [ ] 3.7 Build `ProNotice.svelte`: one quiet, dismissible inline notice; remember dismissal locally.
-  - [ ] 3.8 Build `RedeemPage.svelte` / `#redeem` view: explains "Redeem your AppSumo code", sends the user to AppSumo's flow, and handles the return from `/api/appsumo/oauth` (token delivery to the page). Use only plain `#name` hashes.
-  - [ ] 3.9 Gate the Pro unpackers (cron, User-Agent, headers, certificates, archive, history, PWA install) through `isUnlocked` only; no feature should check tier anywhere else.
-  - [ ] 3.10 Add a development-only way to simulate Pro (build flag, not shipped in production builds) so you can test the UI without AppSumo.
+- [x] 3.0 Entitlements and free/Pro gating (PRD Req 25–27, 31, 34)
+  - [x] 3.1 Confirm the free/Pro split with the owner (PRD Open Question 1) and record the final list at the top of `entitlements.ts`.
+  - [x] 3.2 Build `entitlements.ts` with `isUnlocked(featureId)`, a feature-to-tier map, and token loading/saving in `localStorage` wrapped in try/catch (storage may be blocked).
+  - [x] 3.3 Implement signed-token verification in the browser with Web Crypto Ed25519 (or a pinned small library if browser support is a problem), using an embedded public key. Token carries tier, license-id hash and expiry. Reject expired or tampered tokens.
+  - [x] 3.4 Write `entitlements.test.ts`: valid token, expired token, tampered payload, wrong key, missing storage, offline grace period (Open Question 4 default: 7 days).
+  - [x] 3.5 Add a once-a-day online status re-check hook (calls only the site's own `/api/license/status` endpoint); on "deactivated", remove Pro. Offline failures must not remove Pro before the grace period ends.
+  - [x] 3.6 Build `LockedFeature.svelte`: show name, one-line description and "Unlock Pro" for locked unpackers; never hide them (Req 27). Wire it into the format switcher and palette.
+  - [x] 3.7 Build `ProNotice.svelte`: one quiet, dismissible inline notice; remember dismissal locally.
+  - [x] 3.8 Build `RedeemPage.svelte` / `#redeem` view: explains "Redeem your AppSumo code", sends the user to AppSumo's flow, and handles the return from `/api/appsumo/oauth` (token delivery to the page). Use only plain `#name` hashes.
+  - [x] 3.9 Gate the Pro unpackers (cron, User-Agent, headers, certificates, archive, history, PWA install) through `isUnlocked` only; no feature should check tier anywhere else. (Built features: certificates + nested chaining; others gate via the same map as they are built.)
+  - [x] 3.10 Add a development-only way to simulate Pro (build flag, not shipped in production builds) so you can test the UI without AppSumo.
 
 - [ ] 4.0 Cloudflare Workers deployment and AppSumo licensing (PRD Req 28–33, 41, 42)
   - [ ] 4.1 Read the current Cloudflare docs for Workers Static Assets, and the AppSumo Licensing guide (`docs.licensing.appsumo.com`): webhook events, signature verification, OAuth steps. Note any differences from this plan in `tasks/living_log.md`.

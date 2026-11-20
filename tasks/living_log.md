@@ -141,3 +141,27 @@ No certificate material is committed. OpenSSL 3.0.13 is required on the test mac
 
 **Prevention Note:** If CI lacks OpenSSL, add an exactly-pinned JS certificate generator
 instead of committing fixtures.
+
+---
+
+## Issue #5 — Embedded public key is a development placeholder
+**Date:** 2026-11-20
+**Task:** 3.3 Offline token verification
+**Severity:** Medium
+
+**Problem:** Token verification needs a public key in the browser, but the Worker's
+Ed25519 private key (task 4.8) does not exist yet and must never be committed.
+
+**Root Cause:** Key generation belongs to the Worker secret; the client public key is a
+build-time constant.
+
+**Resolution:** Generated a throwaway Ed25519 pair locally and embedded only its public
+half as `DEFAULT_PUBLIC_KEY_HEX` in `entitlements.ts`. The private half is not stored.
+Tests generate their own keypairs and inject the public key via `configureEntitlements()`.
+README documents replacing the constant with the public half of `TOKEN_PRIVATE_KEY`
+before launch; tracked as a launch blocker for task 4.8.
+
+**Files Affected:** `src/lib/entitlements.ts`, `README.md`.
+
+**Prevention Note:** Never derive the embedded public key from a committed private key;
+generate it alongside the Wrangler secret and update the constant at deploy time.

@@ -1,8 +1,13 @@
 <script lang="ts">
+  import { onMount } from "svelte";
   import CommandPalette, { type Cmd } from "./lib/components/CommandPalette.svelte";
   import FormatSwitcher from "./lib/components/FormatSwitcher.svelte";
+  import LockedFeature from "./lib/components/LockedFeature.svelte";
+  import ProNotice from "./lib/components/ProNotice.svelte";
+  import RedeemPage from "./lib/components/RedeemPage.svelte";
   import ResizableSplit from "./lib/components/ResizableSplit.svelte";
   import ResultTree from "./lib/components/ResultTree.svelte";
+  import { checkStatusOnline, entitlementState, FEATURES, isUnlocked, loadEntitlements } from "./lib/entitlements.ts";
   import { noMatchMessage } from "./lib/messages.ts";
   import { sampleBase64, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUuid } from "./lib/samples.ts";
   import { detect, unpack, unpackers } from "./lib/unpackers/index.ts";
@@ -25,7 +30,28 @@
   let toast = $state("");
   let paletteOpen = $state(false);
   let chainDepth = $state(0);
+  let route = $state(isBrowser ? location.hash : "");
   let textarea: HTMLTextAreaElement | undefined = $state();
+
+  onMount(() => {
+    void loadEntitlements().then(() => void checkStatusOnline());
+    const daily = setInterval(() => void checkStatusOnline(), 24 * 60 * 60 * 1000);
+    const onHash = () => (route = location.hash);
+    window.addEventListener("hashchange", onHash);
+    return () => {
+      clearInterval(daily);
+      window.removeEventListener("hashchange", onHash);
+    };
+  });
+
+  const access = $derived.by(() => {
+    $entitlementState;
+    return {
+      x509: isUnlocked("x509"),
+      nested: isUnlocked("nested"),
+      lockedIds: new Set(Object.keys(FEATURES).filter((id) => !isUnlocked(id))),
+    };
+  });
 
   $effect(() => {
     const mq = window.matchMedia("(max-width: 800px)");
@@ -104,18 +130,23 @@
   }
 </script>
 
-<div class="app">
+<div class="app" id="top">
   <header class="topbar">
     <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpackingtheworld</a>
     <span class="privacy" title="Everything is decoded locally in this tab">Runs entirely in your browser. Nothing is uploaded.</span>
     <div class="spacer-flex"></div>
     <CommandPalette {commands} bind:open={paletteOpen} />
+    <a class="btn" href="#redeem">Pro</a>
     <button class="icon-btn" onclick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
   </header>
 
   <main class="main">
-    {#key narrow}
-      <ResizableSplit {narrow}>
+    {#if route === "#redeem"}
+      <RedeemPage />
+    {:else}
+      <ProNotice />
+      {#key narrow}
+        <ResizableSplit {narrow}>
         {#snippet inputPane()}
           <section class="pane input-pane" aria-label="Input">
             <div class="pane-head">
@@ -155,7 +186,7 @@
           <section class="pane result-pane" aria-label="Result" aria-live="polite">
             <div class="pane-head">
               {#if input.trim()}
-                <FormatSwitcher value={active} options={formatOptions} {detectedIds} onManual={(id) => (override = id)} />
+                <FormatSwitcher value={active} options={formatOptions} {detectedIds} lockedIds={access.lockedIds} onManual={(id) => (override = id)} />
                 {#if !override && detections[0]}
                   <span class="detected-chip">Detected: {detections[0].unpacker.label}</span>
                 {/if}
@@ -184,6 +215,8 @@
                     </p>
                   {/if}
                 </div>
+              {:else if active === "x509" && !access.x509}
+                <LockedFeature name={FEATURES.x509.name} description={FEATURES.x509.description} />
               {:else}
                 {#if result.headline}
                   <div class="headline" data-tone={result.flags.find((f) => f.text === result.headline)?.severity}>{result.headline}</div>
@@ -220,7 +253,7 @@
                   </div>
                 {/if}
 
-                {#if result.next && result.next.length}
+                {#if access.nested && result.next && result.next.length}
                   <div class="chain">
                     <span class="muted small">Unpack result:</span>
                     {#each result.next as step (step.input + step.id)}
@@ -239,8 +272,9 @@
             </div>
           </section>
         {/snippet}
-      </ResizableSplit>
-    {/key}
+        </ResizableSplit>
+      {/key}
+    {/if}
   </main>
 
   <footer class="footer">

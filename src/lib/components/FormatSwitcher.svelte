@@ -5,9 +5,10 @@
     value: string;
     options: { id: string; label: string }[];
     detectedIds: Set<string>;
+    lockedIds: Set<string>;
     onManual: (id: string) => void;
   }
-  let { value, options, detectedIds, onManual }: Props = $props();
+  let { value, options, detectedIds, lockedIds, onManual }: Props = $props();
 </script>
 
 <SegmentedControl
@@ -21,6 +22,6 @@
 >
   <SegmentedControlIndicator />
   {#each options as option (option.id)}
-    <SegmentedControlItem value={option.id} data-detected={detectedIds.has(option.id) ? "" : undefined}>{option.label}</SegmentedControlItem>
+    <SegmentedControlItem value={option.id} data-detected={detectedIds.has(option.id) ? "" : undefined}>{option.label}{#if lockedIds.has(option.id)}<span class="pro-mark">Pro</span>{/if}</SegmentedControlItem>
   {/each}
 </SegmentedControl>

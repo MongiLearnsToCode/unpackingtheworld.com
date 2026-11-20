@@ -33,6 +33,16 @@ Implement `Unpacker` from `src/lib/unpackers/types.ts` (`score()` says how likel
 format, `unpack()` returns flags, fields and JSON sections), then add it to the `unpackers` array in
 `src/lib/unpackers/index.ts`. Detection, the format switcher and the palette pick it up automatically.
 
+## Entitlements
+
+- Single AppSumo tier, `pro`. The confirmed free/Pro feature list is at the top of `src/lib/entitlements.ts`.
+- Pro is an Ed25519-signed token verified in the browser. Before launch, replace
+  `DEFAULT_PUBLIC_KEY_HEX` in `src/lib/entitlements.ts` with the public half of the
+  `TOKEN_PRIVATE_KEY` Wrangler secret used by the Worker.
+- Local Pro simulation (development builds only): `VITE_DEV_PRO=1 npm run dev`.
+- The daily online re-check calls only `/api/license/status` with the token; it never
+  sends pasted input. Offline failures keep Pro for a 7-day grace period.
+
 ## Notes
 
 - UI SDK is pre-1.0. Upgrade deliberately (`npm install --save-exact @ui-sdk/svelte@<ver> @ui-sdk/core@<ver>`)
