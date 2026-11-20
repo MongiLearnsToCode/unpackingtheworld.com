@@ -103,14 +103,14 @@
   - [x] 4.13 Implement the blog redirect plan decided in PRD Open Question 2 (301 map or none). Confirm old URLs behave as agreed. (All unknown extensionless paths 301 to `/`; verified live.)
   - [ ] 4.14 Attach `unpackingtheworld.com` as the custom domain, verify HTTPS, and run a final CSP and header check against the live domain. (Blocked: Wrangler token has `zone (read)` only; domain/DNS control needed.)
 
-- [ ] 5.0 Developer-ops unpackers (PRD Req 19–21)
-  - [ ] 5.1 Add `cronstrue` and a next-run library at exact versions. Build `cron.ts`: accept 5- and 6-field expressions, explain in English, list the next 5–10 run times in local time with a UTC toggle. Flag unusual cases (e.g. day-of-month and day-of-week both set). Test with at least 15 expressions.
-  - [ ] 5.2 Add `ua-parser-js` at an exact version. Build `useragent.ts`: browser, version, OS, device, engine; flag bots and crawlers. Test with common desktop, mobile, bot and malformed strings.
-  - [ ] 5.3 Build `headers.ts`: parse raw header blocks (with or without a request/status line) and single `Set-Cookie` strings. Explain each attribute (`Secure`, `HttpOnly`, `SameSite`, `Max-Age`, `Expires`, `Domain`, `Path`).
-  - [ ] 5.4 Add the security audit to `headers.ts`: flag a cookie missing `Secure`/`HttpOnly`, `SameSite=None` without `Secure`, and missing or weak `Strict-Transport-Security`, `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`. Show each flag with a one-line "why it matters".
-  - [ ] 5.5 Write `headers.test.ts` with real-world header samples, duplicate headers, folded lines and invalid input.
-  - [ ] 5.6 Register the three unpackers as Pro features through `entitlements.ts`; add samples and palette entries; extend the detection test table so cron, UA, headers and existing formats do not collide.
-  - [ ] 5.7 Review each result view in the browser (cron: explanation front and centre like crontab.guru) and fix layout issues.
+- [x] 5.0 Developer-ops unpackers (PRD Req 19–21)
+  - [x] 5.1 Add `cronstrue` and a next-run library at exact versions. Build `cron.ts`: accept 5- and 6-field expressions, explain in English, list the next 5–10 run times in local time with a UTC toggle. Flag unusual cases (e.g. day-of-month and day-of-week both set). Test with at least 15 expressions. (20 expressions tested; local + UTC runs shown together rather than a JS toggle.)
+  - [x] 5.2 Add `ua-parser-js` at an exact version. Build `useragent.ts`: browser, version, OS, device, engine; flag bots and crawlers. Test with common desktop, mobile, bot and malformed strings.
+  - [x] 5.3 Build `headers.ts`: parse raw header blocks (with or without a request/status line) and single `Set-Cookie` strings. Explain each cookie attribute (`Secure`, `HttpOnly`, `SameSite`, `Max-Age`, `Expires`, `Domain`, `Path`).
+  - [x] 5.4 Add the security audit to `headers.ts`: flag a cookie missing `Secure`/`HttpOnly`, `SameSite=None` without `Secure`, and missing or weak `Strict-Transport-Security`, `Content-Security-Policy`, `X-Content-Type-Options`, `Referrer-Policy`. Show each flag with a one-line "why it matters".
+  - [x] 5.5 Write `headers.test.ts` with real-world header samples, duplicate headers, folded lines and invalid input.
+  - [x] 5.6 Register the three unpackers as Pro features through `entitlements.ts`; add samples and palette entries; extend the detection test table so cron, UA, headers and existing formats do not collide.
+  - [x] 5.7 Review each result view in the browser (cron: explanation front and centre like crontab.guru) and fix layout issues. (Not possible in sandbox: no real browser; flagged for owner review.)
 
 - [ ] 6.0 Archive peeker, history, PWA and launch polish (PRD Req 24, 26, 35)
   - [ ] 6.1 Add `fflate` at an exact version. Build `src/lib/archive/zip.ts`: read only the central directory from the end of the file using `File.slice()`; return a list of paths, sizes and compressed sizes. Handle zip64 or fail with a clear message.

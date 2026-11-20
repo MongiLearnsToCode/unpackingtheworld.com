@@ -28,6 +28,26 @@ export function sampleUrl(): string {
   return "https://example.com/search%20results?q=unpacking+the+world&tags=a&tags=b&utm_source=newsletter#section-2";
 }
 
+export function sampleCron(): string {
+  return "*/5 9-17 * * 1-5";
+}
+
+export function sampleUserAgent(): string {
+  return "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36";
+}
+
+export function sampleHeaders(): string {
+  return [
+    "HTTP/2 200",
+    "content-type: text/html; charset=utf-8",
+    "strict-transport-security: max-age=31536000; includeSubDomains",
+    "content-security-policy: default-src 'self'",
+    "x-content-type-options: nosniff",
+    "referrer-policy: no-referrer",
+    "set-cookie: session=abc123; Secure; HttpOnly; SameSite=Lax; Path=/",
+  ].join("\n");
+}
+
 export function sampleHtmlEntities(): string {
   return "The &ldquo;quick brown fox&rdquo; &amp; the lazy dog &#x1F600; &mdash; decoded instantly.";
 }

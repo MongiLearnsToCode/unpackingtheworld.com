@@ -249,3 +249,24 @@ An initial 200 on the old URL was only CDN cache; a cache-busted request returne
 
 **Prevention Note:** After every deploy, verify headers and redirects on both `/api/*`
 and a static page, using a cache-busting query where Cloudflare may cache a 301.
+
+---
+
+## Decision — Pro parser bundle cost (task 5.6)
+**Date:** 2026-11-20
+**Task:** 5.0 Developer-ops unpackers
+**Severity:** Low
+
+**Problem:** Adding `cronstrue`, `cron-parser` and `ua-parser-js` raised the production
+main JS from 289.7 kB (102.5 kB gzip) to 447.6 kB (154.6 kB gzip).
+
+**Root Cause:** All three Pro-only parsers are statically imported by the detection
+registry, so every visitor downloads them even on the free tier.
+
+**Resolution:** Accepted for now; bundle size recorded in README. The `Unpacker`
+interface is synchronous, so lazy-loading needs a registry change (async `unpack()` or
+idle preloading). Deferred to the performance pass in task 6.10.
+
+**Files Affected:** `README.md`, `src/lib/unpackers/index.ts`, `package.json`.
+
+**Prevention Note:** Re-check bundle size after adding any new unpacker library.

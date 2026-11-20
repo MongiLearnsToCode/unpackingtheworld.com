@@ -9,7 +9,7 @@
   import ResultTree from "./lib/components/ResultTree.svelte";
   import { checkStatusOnline, entitlementState, FEATURES, isUnlocked, loadEntitlements } from "./lib/entitlements.ts";
   import { noMatchMessage } from "./lib/messages.ts";
-  import { sampleBase64, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUuid } from "./lib/samples.ts";
+  import { sampleBase64, sampleCron, sampleHeaders, sampleHtmlEntities, sampleJwt, samplePem, sampleTimestamp, sampleUrl, sampleUserAgent, sampleUuid } from "./lib/samples.ts";
   import { detect, unpack, unpackers } from "./lib/unpackers/index.ts";
   import { b64ToBytes, utf8 } from "./lib/unpackers/util.ts";
 
@@ -114,6 +114,9 @@
     { value: "sample-entities", label: "Load sample HTML entities", group: "Samples", run: () => setInput(sampleHtmlEntities()) },
     { value: "sample-timestamp", label: "Load sample Unix timestamp", group: "Samples", run: () => setInput(sampleTimestamp()) },
     { value: "sample-uuid", label: "Load sample UUID", group: "Samples", run: () => setInput(sampleUuid()) },
+    { value: "sample-cron", label: "Load sample cron expression", group: "Samples", run: () => setInput(sampleCron()) },
+    { value: "sample-ua", label: "Load sample User-Agent", group: "Samples", run: () => setInput(sampleUserAgent()) },
+    { value: "sample-headers", label: "Load sample HTTP headers", group: "Samples", run: () => setInput(sampleHeaders()) },
     ...unpackers.map((u) => ({ value: `as-${u.id}`, label: `Unpack as ${u.label}`, group: "Force format", run: () => (override = u.id) })),
     { value: "auto", label: "Auto-detect format", group: "Force format", run: () => (override = null) },
     { value: "share", label: "Copy share link", group: "Actions", run: shareLink },
@@ -215,8 +218,11 @@
                     </p>
                   {/if}
                 </div>
-              {:else if active === "x509" && !access.x509}
-                <LockedFeature name={FEATURES.x509.name} description={FEATURES.x509.description} />
+              {:else if active && access.lockedIds.has(active)}
+                <LockedFeature
+                  name={FEATURES[active as keyof typeof FEATURES]?.name ?? active}
+                  description={FEATURES[active as keyof typeof FEATURES]?.description ?? "This is a Pro feature."}
+                />
               {:else}
                 {#if result.headline}
                   <div class="headline" data-tone={result.flags.find((f) => f.text === result.headline)?.severity}>{result.headline}</div>

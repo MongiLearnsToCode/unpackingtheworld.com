@@ -42,6 +42,12 @@ const cases: Case[] = [
   ["short number", "12345"],
   ["empty JSON", "{}"],
   ["random punctuation", "...!! ?? --"],
+  ["cron every five minutes", "*/5 * * * *"],
+  ["cron weekdays", "0 9 * * 1-5"],
+  ["desktop User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36"],
+  ["bot User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)"],
+  ["header block", "HTTP/2 200\ncontent-type: text/html\nset-cookie: a=1; Secure; HttpOnly"],
+  ["single Set-Cookie", "session=abc123; Secure; HttpOnly; SameSite=Lax"],
 ];
 
 test(`detection table covers ${cases.length} samples`, () => {
@@ -81,6 +87,12 @@ const expectations: [string, string, string][] = [
   ["short number", "12345", "none"],
   ["empty JSON", "{}", "none"],
   ["random punctuation", "...!! ?? --", "none"],
+  ["cron every five minutes", "*/5 * * * *", "cron"],
+  ["cron weekdays", "0 9 * * 1-5", "cron"],
+  ["desktop User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/131.0.0.0 Safari/537.36", "useragent"],
+  ["bot User-Agent", "Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)", "useragent"],
+  ["header block", "HTTP/2 200\ncontent-type: text/html\nset-cookie: a=1; Secure; HttpOnly", "headers"],
+  ["single Set-Cookie", "session=abc123; Secure; HttpOnly; SameSite=Lax", "headers"],
 ];
 
 test("every sample resolves to its expected top format", () => {

@@ -80,6 +80,13 @@ verifying until users redeem again.
 an authenticated Wrangler session, so it is access-protected by Cloudflare credentials.
 There is no manual activate, upgrade or refund path.
 
+## Bundle size
+
+Production build (after 5.0): main JS **447.6 kB / 154.6 kB gzip**, CSS **97.4 kB /
+14.0 kB gzip** (mostly self-hosted Geist fonts). The Pro-only cron, User-Agent and
+header parsers account for most of the growth. If first paint ever feels slow, the next
+step is to lazy-load those three unpackers behind a dynamic import.
+
 ## Notes
 
 - UI SDK is pre-1.0. Upgrade deliberately (`npm install --save-exact @ui-sdk/svelte@<ver> @ui-sdk/core@<ver>`)

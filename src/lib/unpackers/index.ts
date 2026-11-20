@@ -1,4 +1,6 @@
 import { base64 } from "./base64.ts";
+import { cron } from "./cron.ts";
+import { headers } from "./headers.ts";
 import { htmlEntities } from "./htmlEntities.ts";
 import { jwt } from "./jwt.ts";
 import { suggestNext } from "./nested.ts";
@@ -6,12 +8,13 @@ import { pem } from "./pem.ts";
 import { timestamp } from "./timestamp.ts";
 import type { Unpacked, Unpacker } from "./types.ts";
 import { url } from "./url.ts";
+import { useragent } from "./useragent.ts";
 import { uuid } from "./uuid.ts";
 import { x509 } from "./x509.ts";
 
 export * from "./types.ts";
 
-export const unpackers: Unpacker[] = [jwt, url, base64, pem, x509, htmlEntities, timestamp, uuid];
+export const unpackers: Unpacker[] = [jwt, url, base64, pem, x509, htmlEntities, timestamp, uuid, cron, useragent, headers];
 
 export interface Detection {
   unpacker: Unpacker;
