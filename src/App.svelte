@@ -61,6 +61,22 @@
   let historyItems = $state<string[]>([]);
 
   onMount(() => {
+    if (!landingMode) {
+      const toolTitle = "unpacking_the_world · Decode tokens, keys and encodings privately";
+      const toolDescription = "Paste a JWT, PEM key, certificate, cron expression, header block or archive and see a flagged result instantly. Everything runs in your browser; nothing is uploaded.";
+      document.title = toolTitle;
+      const setMeta = (selector: string, value: string, attribute = "content") => {
+        document.querySelector(selector)?.setAttribute(attribute, value);
+      };
+      setMeta('meta[name="description"]', toolDescription);
+      setMeta('link[rel="canonical"]', "https://unpackingtheworld.com/app", "href");
+      setMeta('meta[property="og:title"]', toolTitle);
+      setMeta('meta[property="og:description"]', toolDescription);
+      setMeta('meta[property="og:url"]', "https://unpackingtheworld.com/app");
+      setMeta('meta[name="twitter:title"]', toolTitle);
+      setMeta('meta[name="twitter:description"]', toolDescription);
+    }
+
     let storedHistoryFlag = false;
     try {
       storedHistoryFlag = localStorage.getItem("utw-history-enabled") === "1";

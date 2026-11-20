@@ -10,11 +10,6 @@
   const faq = LEGAL.faq.sections;
 </script>
 
-<svelte:head>
-  <title>Unpacking the World · Decode anything, upload nothing</title>
-  <meta name="description" content="Decode JWTs, keys, certificates, cron, headers and archives in your browser. Nothing you paste is uploaded. Free tier, with Pro via AppSumo." />
-</svelte:head>
-
 <div class="landing">
   <header class="landing-nav">
     <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpacking_the_world</a>
