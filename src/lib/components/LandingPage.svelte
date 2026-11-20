@@ -17,7 +17,7 @@
 
 <div class="landing">
   <header class="landing-nav">
-    <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpackingtheworld</a>
+    <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpacking_the_world</a>
     <nav aria-label="Landing sections">
       <a href="#formats">Formats</a>
       <a href="#privacy-first">Privacy</a>

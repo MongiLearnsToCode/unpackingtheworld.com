@@ -243,7 +243,7 @@
 {:else}
 <div class="app" id="top">
   <header class="topbar">
-    <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpackingtheworld</a>
+    <a class="brand" href="/"><span class="logo" aria-hidden="true">📦</span> unpacking_the_world</a>
     <span class="privacy" title="Everything is decoded locally in this tab">Runs entirely in your browser. Nothing is uploaded.</span>
     <div class="spacer-flex"></div>
     <CommandPalette {commands} bind:open={paletteOpen} />
