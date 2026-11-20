@@ -87,7 +87,8 @@ kbd { font: 12px var(--font-mono); padding: 1px 6px; border: 1px solid var(--bor
 .chip { font: 12px var(--font-mono); padding: 2px 8px; }
 .icon-btn { width: 32px; padding: 4px 0; }
 .palette-trigger { display: inline-flex; gap: 10px; align-items: center; color: var(--muted-text); }
-.link { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: underline; }
+.link { background: none; border: 0; padding: 0; color: var(--accent); text-decoration: none; }
+.link:hover { text-decoration: underline; }
 .detected-chip { font: 12px var(--font-mono); color: var(--good); border: 1px solid var(--good); border-radius: 999px; padding: 1px 8px; white-space: nowrap; }
 .share-note { white-space: nowrap; }
 .chain { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border); }
