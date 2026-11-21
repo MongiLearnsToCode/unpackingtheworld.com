@@ -34,7 +34,15 @@
   <main>
     <section class="hero">
       <div class="hero-copy">
-        <h1>Paste anything.<br />See everything.<br /><span class="muted">Upload nothing.</span></h1>
+        <h1>
+          Paste anything.<br />
+          <span class="hero-rotator">
+            <span class="hero-rotator-track">
+              <span>See everything.</span>
+              <span class="muted">Upload nothing.</span>
+            </span>
+          </span>
+        </h1>
         <p class="lede">unpacking_the_world detects what you pasted — JWTs, private keys, certificates, cron expressions, headers, timestamps, UUIDs and archives — and shows you what matters, entirely in your browser.</p>
         <div class="hero-actions">
           <a class="btn solid" href="/app">Open the tool</a>
