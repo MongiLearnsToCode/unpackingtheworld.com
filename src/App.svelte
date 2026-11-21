@@ -24,17 +24,7 @@
   const SOFT_INPUT_LIMIT = 2 * 1024 * 1024;
   const DEBOUNCE_MS = 150;
 
-  interface InstallPromptEvent extends Event {
-    prompt(): Promise<void>;
-  }
   const landingMode = isBrowser && isLandingRoute(location.pathname, location.hash);
-  let installEvent = $state<InstallPromptEvent | null>(null);
-
-  async function installApp() {
-    if (!installEvent) return;
-    await installEvent.prompt();
-    installEvent = null;
-  }
 
   function fromHash(): string {
     return isBrowser ? decodeShare(location.hash) : "";
@@ -68,13 +58,10 @@
     void loadEntitlements().then(() => void checkStatusOnline());
     const daily = setInterval(() => void checkStatusOnline(), 24 * 60 * 60 * 1000);
     const onHash = () => (route = location.hash);
-    const onInstall = (event: Event) => (installEvent = event as InstallPromptEvent);
     window.addEventListener("hashchange", onHash);
-    window.addEventListener("beforeinstallprompt", onInstall);
     return () => {
       clearInterval(daily);
       window.removeEventListener("hashchange", onHash);
-      window.removeEventListener("beforeinstallprompt", onInstall);
     };
   });
 
@@ -84,7 +71,6 @@
       x509: isUnlocked("x509"),
       archive: isUnlocked("archive"),
       history: isUnlocked("history"),
-      pwa: isUnlocked("pwa"),
       nested: isUnlocked("nested"),
       lockedIds: new Set(Object.keys(FEATURES).filter((id) => !isUnlocked(id))),
     };
@@ -235,7 +221,6 @@
     <span class="privacy" title="Everything is decoded locally in this tab">Runs entirely in your browser. Nothing is uploaded.</span>
     <div class="spacer-flex"></div>
     <CommandPalette {commands} bind:open={paletteOpen} />
-    {#if access.pwa && installEvent}<button class="btn" onclick={installApp}>Install</button>{/if}
     <button class="icon-btn" onclick={toggleTheme} aria-label="Toggle theme">{theme === "dark" ? "☀" : "☾"}</button>
   </header>
 

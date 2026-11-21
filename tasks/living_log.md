@@ -370,3 +370,27 @@ pane with clear space from the border, and the panes end above the footer.
 
 **Prevention Note:** When stacking fixed strips inside a full-height flex pane, mark the
 strips non-shrinking and let only the content area flex.
+
+---
+
+## Decision — Offline install deferred (2026-11-21)
+**Date:** 2026-11-21
+**Task:** Product scope
+**Severity:** Low
+
+**Problem:** "Offline install" was being marketed and gated as a Pro feature, with an
+in-app install button.
+
+**Root Cause:** Owner asked to hold it back for now.
+
+**Resolution:** Removed the `pwa` feature from `FEATURES` and `Access`, removed the
+`beforeinstallprompt` listener and Install button from the tool, and removed every
+"offline install" mention from the landing pricing block, FAQ and entitlement comments.
+The service worker and web manifest remain for caching and offline resilience, but no
+install prompt or Pro feature is offered.
+
+**Files Affected:** `src/App.svelte`, `src/lib/access.ts`, `src/lib/entitlements.ts`,
+`src/lib/components/LandingPage.svelte`, `src/lib/legal.ts`.
+
+**Prevention Note:** Keep installability and feature marketing separate so a product
+decision does not require removing the offline cache.

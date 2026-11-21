@@ -118,7 +118,7 @@
     <section class="section landing-split landing-reverse" id="pricing">
       <div>
         <h2>Pricing</h2>
-        <p class="muted section-intro">Free for the everyday decodes. Pro covers the security-focused and bulk tools, plus offline install. One AppSumo lifetime licence unlocks everything on this browser — no subscription, no account.</p>
+        <p class="muted section-intro">Free for the everyday decodes. Pro covers the security-focused and bulk tools. One AppSumo lifetime licence unlocks everything on this browser — no subscription, no account.</p>
         <p class="micro muted">Suggested launch price: ${APPSUMO_PRICE_USD} once. Redeeming here stores Pro locally with a seven-day offline grace period.</p>
       </div>
       <div class="plan-list">
@@ -138,7 +138,6 @@
           <ul>
             {#each proFeatures as unpacker (unpacker.id)}<li>{unpacker.label}</li>{/each}
             <li>Local history</li>
-            <li>Offline install</li>
           </ul>
           <a class="btn solid" href="/app#redeem">Redeem AppSumo code</a>
         </div>

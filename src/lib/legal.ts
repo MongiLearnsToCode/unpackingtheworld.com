@@ -81,7 +81,7 @@ export const LEGAL: Record<string, { title: string; sections: LegalSection[] }> 
       },
       {
         title: "What is Pro?",
-        paragraphs: ["Pro adds certificates, nested unpacking, cron, User-Agent parsing, header/cookie audits, the archive peeker, local history and offline install. Free features stay free."],
+        paragraphs: ["Pro adds certificates, nested unpacking, cron, User-Agent parsing, header/cookie audits, the archive peeker and local history. Free features stay free."],
       },
       {
         title: "Does it work offline?",

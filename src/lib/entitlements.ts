@@ -3,7 +3,7 @@ import { writable } from "svelte/store";
 /**
  * Free:  JWT, Base64/Base64url, URL, HTML entities, timestamps, UUIDs, PEM basics.
  * Pro:   X.509 certificates, nested chaining, cron, User-Agent, headers/cookies,
- *        archive peeker, local history, offline PWA install.
+ *        archive peeker and local history.
  * Single AppSumo tier: "pro". Owner-confirmed 2026-11-20 (Open Question 1).
  */
 export const GRACE_DAYS = 7;
@@ -24,7 +24,6 @@ export const FEATURES = {
   headers: { tier: "pro", name: "Headers", description: "Inspect headers and cookies for security flags." },
   archive: { tier: "pro", name: "Archive", description: "Peek inside zip and tar files." },
   history: { tier: "pro", name: "History", description: "Keep recent inputs locally, off by default." },
-  pwa: { tier: "pro", name: "Offline install", description: "Install the tool and use it offline." },
 } as const;
 
 export type FeatureId = keyof typeof FEATURES;
