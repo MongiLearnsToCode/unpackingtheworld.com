@@ -323,8 +323,16 @@ licence state, not user data.
 - [x] `npm run check` reports 0 errors and 0 warnings.
 - [x] `npm test` reports 136 passing, 0 failing.
 - [x] `npm run build` succeeds and `dist/` contains the expected assets.
-- [ ] Manual pass on `/`, `/app`, `#privacy`, `#redeem`, archive drop, share link, theme
+- [~] Manual pass on `/`, `/app`, `#privacy`, `#redeem`, archive drop, share link, theme
       toggle, command palette and offline reload.
+      - Verified in a real browser (2026-11-21): `/`, `/app`, `#privacy`, `#redeem`,
+        paste-to-decode with format detection, command palette, share link copied to the
+        clipboard as `#d=…`, theme toggle, archive upload → tree expand → text preview.
+      - Offline reload could not be emulated here (no network-off switch in this
+        environment). Service worker `utw-v2` is active and caches `/`, `/app`, the
+        hashed assets, fonts and manifest; the fallback returns the cached shell for
+        navigations. Precache now includes `/app` so a cold offline open of the tool
+        resolves to the decoder rather than the landing page.
 - [x] Re-run raw-HTML checks: `/` and `/app` titles, descriptions and canonicals.
 
 ---

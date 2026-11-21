@@ -1,5 +1,5 @@
 const CACHE = "utw-v2";
-const PRECACHE = ["/", "/icon.svg"];
+const PRECACHE = ["/", "/app", "/icon.svg"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).then(() => self.skipWaiting()));
