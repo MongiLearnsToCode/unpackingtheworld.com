@@ -140,17 +140,17 @@ kbd { font: 12px var(--font-mono); padding: 1px 6px; border: 1px solid var(--bor
 .landing h1 { font-size: clamp(36px, 5.2vw, 68px); line-height: 1.04; margin: 0 0 20px; font-weight: 600; }
 .hero-rotator { --hero-line: 1.06em; display: block; position: relative; height: var(--hero-line); }
 .hero-rotator-track { display: block; }
-.hero-rotator-track > span { position: absolute; inset: 0; height: var(--hero-line); line-height: var(--hero-line); }
-.hero-rotator-track > span:first-child { animation: hero-rotate-out 6s infinite; }
-.hero-rotator-track > span:last-child { animation: hero-rotate-in 6s infinite; }
+.hero-rotator-track > span { position: absolute; inset: 0; height: var(--hero-line); line-height: var(--hero-line); animation-duration: 7s; animation-iteration-count: infinite; animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1); animation-fill-mode: both; }
+.hero-rotator-track > span:first-child { animation-name: hero-rotate-out; }
+.hero-rotator-track > span:last-child { animation-name: hero-rotate-in; }
 @keyframes hero-rotate-out {
   0%, 45% { opacity: 1; transform: translateY(0); }
-  50%, 95% { opacity: 0; transform: translateY(-0.12em); }
+  50%, 96% { opacity: 0; transform: translateY(-0.12em); }
   100% { opacity: 1; transform: translateY(0); }
 }
 @keyframes hero-rotate-in {
-  0%, 45% { opacity: 0; transform: translateY(0.12em); }
-  50%, 95% { opacity: 1; transform: translateY(0); }
+  0%, 50% { opacity: 0; transform: translateY(0.12em); }
+  56%, 95% { opacity: 1; transform: translateY(0); }
   100% { opacity: 0; transform: translateY(0.12em); }
 }
 @media (prefers-reduced-motion: reduce) {
