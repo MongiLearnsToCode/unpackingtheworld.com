@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount } from "svelte";
   import { FEATURES } from "../entitlements.ts";
+  import { APPSUMO_PRICE_USD } from "../pricing.ts";
   import { LEGAL } from "../legal.ts";
   import { sampleJwt } from "../samples.ts";
   import { unpack, unpackers } from "../unpackers/index.ts";
@@ -24,7 +25,7 @@
     <nav aria-label="Landing sections">
       <a href="#formats">Formats</a>
       <a href="#privacy-first">Privacy</a>
-      <a href="#pricing">Free vs Pro</a>
+      <a href="#pricing">Pricing</a>
       <a href="#faq">FAQ</a>
     </nav>
     <a class="btn solid" href="/app">Open the tool</a>
@@ -116,26 +117,30 @@
 
     <section class="section landing-split landing-reverse" id="pricing">
       <div>
-        <h2>Free for the everyday decodes. Pro for the deep ones.</h2>
-        <p class="muted">The free tier covers the formats you reach for most. Pro adds the security-focused and bulk tools, plus offline install. One AppSumo lifetime licence unlocks them all in your browser.</p>
-        <a class="btn solid" href="/app#redeem">Redeem an AppSumo code</a>
+        <h2>Pricing</h2>
+        <p class="muted section-intro">Free for the everyday decodes. Pro covers the security-focused and bulk tools, plus offline install. One AppSumo lifetime licence unlocks everything on this browser — no subscription, no account.</p>
+        <p class="micro muted">Suggested launch price: ${APPSUMO_PRICE_USD} once. Redeeming here stores Pro locally with a seven-day offline grace period.</p>
       </div>
       <div class="plan-list">
         <div class="plan">
           <h3>Free</h3>
-          <p class="muted small">Always available, no account.</p>
+          <p class="plan-price"><strong>$0</strong><span>forever · no account</span></p>
+          <p class="muted small">The formats developers reach for most.</p>
           <ul>
             {#each freeFeatures as unpacker (unpacker.id)}<li>{unpacker.label}</li>{/each}
           </ul>
+          <a class="btn" href="/app">Start free</a>
         </div>
-        <div class="plan">
+        <div class="plan featured">
           <h3>Pro <span class="pro-mark">Lifetime</span></h3>
-          <p class="muted small">Via AppSumo, verified offline.</p>
+          <p class="plan-price"><strong>${APPSUMO_PRICE_USD}</strong><span>one-time · via AppSumo</span></p>
+          <p class="muted small">Everything in Free, plus:</p>
           <ul>
             {#each proFeatures as unpacker (unpacker.id)}<li>{unpacker.label}</li>{/each}
             <li>Local history</li>
             <li>Offline install</li>
           </ul>
+          <a class="btn solid" href="/app#redeem">Redeem AppSumo code</a>
         </div>
       </div>
     </section>

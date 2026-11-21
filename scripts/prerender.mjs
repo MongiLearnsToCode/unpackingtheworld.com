@@ -45,7 +45,7 @@ function replaceOnce(source, needle, replacement, label) {
   return source.slice(0, first) + replacement + source.slice(first + needle.length);
 }
 
-function structuredData(faq) {
+function structuredData(faq, appsumoPrice) {
   const data = [
     {
       "@context": "https://schema.org",
@@ -58,11 +58,13 @@ function structuredData(faq) {
       description:
         "Browser-based decoder for JWTs, private keys, certificates, cron expressions, HTTP headers, timestamps, UUIDs and archives. Nothing you paste is uploaded.",
       offers: {
-        "@type": "Offer",
-        price: "0",
+        "@type": "AggregateOffer",
         priceCurrency: "USD",
+        lowPrice: "0",
+        highPrice: String(appsumoPrice),
+        offerCount: 2,
         description:
-          "Free tier for everyday decodes; Pro unlocks certificates, nested chaining, archives and history via an AppSumo lifetime licence.",
+          "Free tier for everyday decodes; Pro unlocks certificates, nested chaining, archives and history via a one-time AppSumo lifetime licence.",
       },
     },
     { "@context": "https://schema.org", "@type": "WebSite", name: "unpacking_the_world", url: `${SITE}/` },
@@ -125,6 +127,7 @@ const server = await createServer({
 
 try {
   const { renderLanding, faqPairs } = await server.ssrLoadModule("/src/entry-server.ts");
+  const { APPSUMO_PRICE_USD } = await server.ssrLoadModule("/src/lib/pricing.ts");
   const template = await readFile(`${root}dist/index.html`, "utf8");
   const landing = renderLanding();
 
@@ -136,7 +139,7 @@ try {
         "Decode JWTs, private keys, certificates, cron expressions, headers, timestamps, UUIDs and archives in your browser. Nothing you paste is uploaded — no analytics, no sign-up.",
       canonical: `${SITE}/`,
       body: landing,
-      jsonld: structuredData(faqPairs()),
+      jsonld: structuredData(faqPairs(), APPSUMO_PRICE_USD),
     }),
   );
 
